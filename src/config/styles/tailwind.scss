@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+  }
+
+  html.dark body {
+    background-color: #0f172a;
+  }
+
+  :root {
+    @apply text-zinc-900;
+  }
+
+  :root[class~="dark"] {
+    @apply text-zinc-100;
+  }
+
+  h1, h2, h3, h4, p {
+    margin: 0;
+  }
+
+  p {
+    line-height: 1.7em;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 900;
+    line-height: 1.2em;
+    letter-spacing: -0.5px;
+    margin: 0;
+    margin-bottom: 2rem;
+  }
+
+  h2 {
+    font-weight: 800;
+    font-size: 1.5rem;
+    line-height: 1.3em;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.3em;
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  h4 {
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.3em;
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  a {
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 500;
+    @apply text-blue-500;
+  }
+
+  a:hover {
+    text-decoration: none;
+  }
+}

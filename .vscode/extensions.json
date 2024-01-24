@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "dbaeumer.vscode-eslint",
+    "kamikillerto.vscode-colorize",
+    "eamodio.gitlens",
+    "bradlc.vscode-tailwindcss",
+  ]
+}

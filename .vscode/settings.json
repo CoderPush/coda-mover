@@ -1,0 +1,22 @@
+{
+  "search.exclude": {
+    "**/.yarn": true,
+    "**/.pnp.*": true,
+    "**/tmp": true
+  },
+  "files.insertFinalNewline": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.format.enable": true,
+  "editor.formatOnSave": false,
+  "files.associations": {
+    "tailwind.css": "tailwindcss",
+    "tailwind.scss": "tailwindcss"
+  },
+  "tailwindCSS.classAttributes": [
+    "className",
+    "selectClassName",
+    "inputClassName",
+  ]
+}
