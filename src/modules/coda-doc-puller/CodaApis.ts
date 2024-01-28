@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { ICodaDoc } from './interfaces'
+import type { ICodaApiDoc } from './interfaces'
 
 const apis = axios.create({
   baseURL: 'https://coda.io/apis/v1',
@@ -11,6 +11,6 @@ export const CodaApis = {
       headers: { Authorization: `Bearer ${token}` },
     })
 
-    return data?.items as ICodaDoc[] || []
+    return data?.items as ICodaApiDoc[] || []
   },
 }

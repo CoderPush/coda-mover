@@ -1,19 +1,39 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
-import listDocs from './actions/listDocs'
 import { CodaDocList } from './CodaDocList'
+import { useEffect, useState } from 'react'
+import type { ICodaItems } from './interfaces'
+import { MoverClient, type IItemStatuses } from '../mover'
 
 export function CodaDocPuller () {
-  const [listState, listAction] = useFormState(listDocs, {})
-  const { pending } = useFormStatus()
-  // TODO: refine pull button disabling condition
-  // For now disable even when api token provided to prevent spamming background doc listing tasks
-  const isPullButtonDisabled = Boolean(pending || listState.apiToken)
+  const [apiToken, setApiToken] = useState('')
+  const [items, setItems] = useState<ICodaItems>([])
+  const [itemStatuses, setItemStatuses] = useState<IItemStatuses>({})
+  const [mover, setMover] = useState<MoverClient | null>(null)
+  const isPullButtonDisabled = !apiToken
+  const message = !apiToken && 'Please provide Coda API token'
+
+  useEffect(() => {
+    if (mover) return
+
+    // Ensure mover server started
+    // TODO: handle errors
+    void fetch('/api/mover')
+
+    const client = new MoverClient()
+
+    client.handleServerReturnDocs(docs => setItems(docs))
+    client.handleItemStatus(itemStatus => setItemStatuses({
+      ...itemStatuses,
+      [itemStatus.id]: itemStatus,
+    }))
+
+    setMover(client)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className='coda-doc-puller'>
-      <form action={listAction} className='flex items-end gap-3'>
+      <form className='flex items-end gap-3'>
         <div className='form-field'>
           <label className='form-label'>Coda API Token</label>
           <div className='form-control relative w-full'>
@@ -22,26 +42,27 @@ export function CodaDocPuller () {
               placeholder='Type here'
               type='password'
               className='input max-w-full'
-              defaultValue={listState.apiToken}
+              value={apiToken}
+              onChange={ev => setApiToken(ev.target.value)}
             />
           </div>
         </div>
         <div className='form-field'>
           <div className='form-control justify-between'>
             <button
+              type='button'
               className='btn btn-primary w-full hover:bg-indigo-600 cursor-pointer!'
               disabled={isPullButtonDisabled}
+              onClick={() => apiToken && mover?.syncDocs(apiToken)}
             >Pull
             </button>
           </div>
         </div>
       </form>
-      {listState.message && (
-        <div className='mt-3 text-indigo-600'>ℹ <span className='text-sm'>{listState.message}</span></div>
+      {message && (
+        <div className='mt-3 text-indigo-600'>ℹ <span className='text-sm'>{message}</span></div>
       )}
-      {listState.apiToken && (
-        <CodaDocList items={listState.docs || []} className='mt-3' />
-      )}
+      <CodaDocList items={items} className='mt-3' statuses={itemStatuses} />
     </div>
   )
 }
