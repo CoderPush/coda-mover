@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react'
 import type { ICodaItems } from './interfaces'
 import { CodaItem } from './CodaItem'
-import { CLIENT_SYNC_DOCS, type IItemStatuses } from '../mover'
+import { CLIENT_SYNC_DOCS, type IItemStatuses } from '../mover/client'
 
 export interface ICodaDocListProps extends HTMLAttributes<HTMLElement> {
   items: ICodaItems
@@ -17,7 +17,7 @@ export function CodaDocList ({ items, className, statuses }: ICodaDocListProps) 
       {!isLoading && (<span className='menu-title'>Found {items.length} docs</span>)}
       <menu className='menu-items gap-1'>
         {docs.map(doc => (
-          <CodaItem key={doc.id} data={doc} items={items} />
+          <CodaItem key={doc.id} data={doc} items={items} statuses={statuses} />
         ))}
       </menu>
     </section>

@@ -1,12 +1,13 @@
 // Until Next exposes http server instance from its endpoints or config
 // Temporarily use `pages` folder to access Next server instance to combine with socket.io
 
-import { MoverServer } from '@/modules/mover'
+import { MoverServer } from '@/modules/mover/server'
 import { type Server as HttpServer } from 'http'
 import { type NextApiResponse } from 'next'
 import { Server } from 'socket.io'
 
 let websocketServer: Server
+let mover: MoverServer
 
 const initTasksServer = (req: any, res: NextApiResponse) => {
   if (!websocketServer) {
@@ -16,10 +17,10 @@ const initTasksServer = (req: any, res: NextApiResponse) => {
       path: '/api/mover/io',
     })
 
-    websocketServer.on('connection', socket => {
-      const mover = new MoverServer(socket)
+    mover = new MoverServer()
 
-      mover.handleClientRequests()
+    websocketServer.on('connection', socket => {
+      void mover.handleClientRequests(socket)
     })
   }
 
