@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client'
-import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS } from './events'
-import type { ICodaDoc, IItemStatus, ICodaItem, ICodaItems, IItemStatuses } from './interfaces'
+import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS, SERVER_RETURN_PAGES } from './events'
+import type { ICodaDoc, IItemStatus, ICodaItem, ICodaItems, IItemStatuses, ICodaPage } from './interfaces'
 
 export class MoverClient {
   items: Record<string, ICodaItem> = {}
@@ -41,6 +41,19 @@ export class MoverClient {
 
       docs.forEach(doc => {
         items[doc.id] = doc
+      })
+
+      this.items = items
+
+      onItems(Object.values(this.items))
+    })
+
+    this.socket.on(SERVER_RETURN_PAGES, (pages: ICodaPage[]) => {
+      console.info('[mover]', SERVER_RETURN_PAGES)
+      const items = { ...this.items } // clone items
+
+      pages.forEach(page => {
+        items[page.id] = page
       })
 
       this.items = items

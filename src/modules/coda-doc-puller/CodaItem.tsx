@@ -10,7 +10,7 @@ export interface ICodaItemProps extends HTMLAttributes<HTMLLIElement> {
 }
 
 export function CodaItem ({ data, items, statuses }: ICodaItemProps) {
-  const innerPages = items.filter(item => item.treePath === `/${data.id}/`)
+  const innerPages = items.filter(item => item.treePath === `${data.treePath}${data.id}/`)
   const hasInnerPages = innerPages.length > 0
 
   return (
@@ -19,7 +19,7 @@ export function CodaItem ({ data, items, statuses }: ICodaItemProps) {
       <div className='flex items-center'>
         <input type='checkbox' className='checkbox' />
         <label className='menu-item menu-item-no-animation basis-4/5 overflow-hidden justify-between grow px-3 ml-2' htmlFor={`toggle--${data.id}`}>
-          <span className='text-ellipsis whitespace-nowrap overflow-hidden'>{data.name}</span>
+          <span className='text-ellipsis whitespace-nowrap overflow-hidden grow'>{data.name}</span>
           <CodaItemStatus status={statuses[data.id]?.status} />
           {hasInnerPages && (
             <span className='menu-icon'>

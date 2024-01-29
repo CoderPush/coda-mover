@@ -16,6 +16,7 @@ export interface ICodaApiPage {
   id: string
   name: string
   updatedAt: string // ISO string
+  parent?: { id: string }
 }
 
 export interface ICodaPage {

@@ -2,9 +2,9 @@ import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { type Socket } from 'socket.io'
 import { ensureDir, pathExists, readJson, rename, writeJson } from 'fs-extra'
 import { resolve } from 'path'
-import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS } from './events'
+import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS, SERVER_RETURN_PAGES } from './events'
 import { CodaApis } from '../coda-doc-puller/CodaApis'
-import type { ICodaDoc, ICodaItem, ICodaItems, ICodaApiDoc } from './interfaces'
+import type { ICodaDoc, ICodaItem, ICodaItems, ICodaApiDoc, ICodaApiPage } from './interfaces'
 
 const rootPath = resolve(__dirname, '../../../../').replace(/\\/g, '/') // fix path separator for windows
 const dataPath = `${rootPath}/data`
@@ -13,7 +13,7 @@ const codaDocsPath = `${dataPath}/docs`
 
 export class MoverServer {
   readonly tasks = new TaskEmitter({
-    concurrency: 3,
+    concurrency: 10,
     onItemError: (item, error) => {
       console.error('[mover]', item.id, 'error', error)
       this.notifyStatus(item.id!, 'error', error.message)
@@ -67,41 +67,61 @@ export class MoverServer {
 
   handleClientSyncDocs () {
     this.socket.on(CLIENT_SYNC_DOCS, async (apiToken: string) => {
-      let listDocsResponse = await CodaApis.listDocs(apiToken)
+      let docListingRes = await CodaApis.listDocs(apiToken)
 
-      await this.processApiDocs(listDocsResponse.items)
+      await this.processApiDocs(docListingRes.items, apiToken)
 
-      while (listDocsResponse.nextPageToken) {
-        listDocsResponse = await CodaApis.listDocs(apiToken, listDocsResponse.nextPageToken)
-        await this.processApiDocs(listDocsResponse.items)
+      while (docListingRes.nextPageToken) {
+        docListingRes = await CodaApis.listDocs(apiToken, docListingRes.nextPageToken)
+        await this.processApiDocs(docListingRes.items, apiToken)
       }
+
+      this.notifyStatus(CLIENT_SYNC_DOCS, 'done')
+      this.queuePersistingData()
     })
   }
 
-  private async processApiDocs (apiDocs: ICodaApiDoc[]) {
+  async processApiDocs (apiDocs: ICodaApiDoc[], apiToken: string) {
     const docs: ICodaDoc[] = apiDocs.map(doc => ({
       id: doc.id,
       name: doc.name,
       treePath: '/',
     }))
 
+    // return docs
     this.socket.emit(SERVER_RETURN_DOCS, docs)
 
-    apiDocs.forEach(doc => this.tasks.add({
-      id: doc.id,
-      context: {},
-      execute: async () => await this.syncApiDoc(doc),
-    }))
+    // return synced pages of returned docs
+    const returnedDocIds = docs.map(doc => doc.id)
+    // example returned doc ids are a,b,c the pattern should be /^(a|b|c)/
+    const returnedDocIdsRegex = new RegExp(`^/(${returnedDocIds.join('|')})/`)
+    const innerPagesOfReturnedDocs = Object.values(this.items)
+      .filter(item => returnedDocIdsRegex.test(item.treePath))
 
-    this.notifyStatus(CLIENT_SYNC_DOCS, 'done')
-    this.queuePersistingData()
+    this.socket.emit(SERVER_RETURN_PAGES, innerPagesOfReturnedDocs)
+
+    docs.forEach((doc, idx) => {
+      this.tasks.add({
+        id: doc.id,
+        context: {},
+        execute: async () => await this.taskProcessDocOnFilesystem(doc, apiDocs[idx].updatedAt),
+        priority: TaskPriority.HIGH,
+      })
+
+      this.tasks.add({
+        id: doc.id,
+        context: {},
+        execute: async () => await this.taskListPagesPerDoc(doc, apiToken),
+      })
+    })
+
     this.tasks.next()
   }
 
-  private async syncApiDoc (doc: ICodaApiDoc) {
-    const syncedDoc = this.items[doc.id]
+  async taskProcessDocOnFilesystem (doc: ICodaDoc, updatedAt: string) {
+    const restoredDoc = this.items[doc.id]
     const docFilePath = `${codaDocsPath}/${doc.name}`
-    const updatedDoc = {
+    const syncedDoc = {
       id: doc.id,
       name: doc.name,
       treePath: '/',
@@ -109,26 +129,80 @@ export class MoverServer {
       filePath: docFilePath,
     }
 
-    if (!syncedDoc?.filePath) { // new doc
+    if (!restoredDoc?.filePath) { // save new doc
       this.notifyStatus(doc.id, 'saving')
-    } else if (!syncedDoc.syncedAt || syncedDoc.syncedAt < doc.updatedAt) { // doc outdated
-      await this.revalidateSyncedDoc(syncedDoc, updatedDoc)
+    } else if (restoredDoc.syncedAt && restoredDoc.syncedAt < updatedAt) { // doc outdated
+      await this.revalidateSyncedDoc(restoredDoc, syncedDoc)
     }
 
-    this.items[doc.id] = updatedDoc
-    await ensureDir(updatedDoc.filePath)
+    this.items[doc.id] = syncedDoc
+    await ensureDir(syncedDoc.filePath)
   }
 
-  private async revalidateSyncedDoc (syncedDoc: ICodaDoc, updatedDoc: ICodaDoc) {
-    this.notifyStatus(syncedDoc.id, 'validating')
-    if (syncedDoc.filePath === updatedDoc.filePath) return
+  async revalidateSyncedDoc (restoredDoc: ICodaDoc, updatedDoc: ICodaDoc) {
+    const restoredFilePath = restoredDoc.filePath
+    const newFilePath = updatedDoc.filePath
+    if (!restoredFilePath || !newFilePath) return
+    if (restoredFilePath === newFilePath) return
 
-    const syncedPathExists = await pathExists(syncedDoc.filePath!)
+    // update inner pages filePath
+    Object.values(this.items).forEach(item => {
+      const filePath = item.filePath
+
+      if (!item.treePath.startsWith(`/${restoredDoc.name}/`)) return // not inner page
+      if (!filePath) return // inner page not synced
+      this.items[item.id].filePath = filePath.replace(restoredFilePath, newFilePath)
+    })
+
+    const syncedPathExists = await pathExists(restoredFilePath)
     if (syncedPathExists) {
-      await rename(syncedDoc.filePath!, updatedDoc.filePath!)
+      await rename(restoredFilePath, newFilePath)
+    }
+  }
+
+  async taskListPagesPerDoc (doc: ICodaDoc, apiToken: string) {
+    const docId = doc.id
+
+    this.notifyStatus(docId, 'listing')
+    let pageListingRes = await CodaApis.listPagesForDoc(apiToken, docId)
+
+    await this.processApiPages(doc, pageListingRes.items)
+
+    while (pageListingRes.nextPageToken) {
+      pageListingRes = await CodaApis.listPagesForDoc(apiToken, docId, pageListingRes.nextPageToken)
+
+      await this.processApiPages(doc, pageListingRes.items)
     }
 
-    // TODO: update inner pages filePath
+    this.notifyStatus(docId, 'done')
+  }
+
+  async processApiPages (doc: ICodaDoc, apiPages: ICodaApiPage[]) {
+    const pages = apiPages.map((page, idx) => {
+      const parentId = page.parent?.id
+      let parent = doc
+
+      if (parentId && this.items[parentId]) {
+        parent = this.items[parentId]
+      }
+
+      const treePath = `${parent.treePath}${parent.id}/`
+      const syncedPage = {
+        id: page.id,
+        name: page.name,
+        treePath,
+      }
+
+      this.items[page.id] = {
+        ...this.items[page.id],
+        ...syncedPage,
+      }
+
+      return this.items[page.id]
+    })
+
+    // return page updates or new pages
+    this.socket.emit(SERVER_RETURN_PAGES, pages)
   }
 
   queuePersistingData () {
