@@ -1,14 +1,14 @@
 import { io } from 'socket.io-client'
 import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS } from './events'
-import { type ICodaDoc } from '../coda-doc-puller/interfaces'
-import { type IItemStatus } from './interfaces'
+import type { ICodaDoc, IItemStatus, ICodaItem, ICodaItems, IItemStatuses } from './interfaces'
 
 export class MoverClient {
+  items: Record<string, ICodaItem> = {}
+  itemStatuses: IItemStatuses = {}
+
   readonly socket = io('/', {
     path: '/api/mover/io',
   })
-
-  readonly itemStatuses: Record<string, string> = {}
 
   constructor () {
     this.socket.on('connect', () => {
@@ -21,14 +21,31 @@ export class MoverClient {
     this.socket.emit(CLIENT_SYNC_DOCS, apiToken)
   }
 
-  handleServerReturnDocs (callback: (docs: ICodaDoc[]) => void) {
+  handleServerResponses (
+    onItems: (items: ICodaItems) => void,
+    onStatuses: (itemStatuses: Record<string, IItemStatus>) => void,
+  ) {
+    this.socket.on(ITEM_STATUS, (item: IItemStatus) => {
+      console.info('[mover] - ', item.id, item.status)
+      this.itemStatuses = {
+        ...this.itemStatuses,
+        [item.id]: item,
+      }
+
+      onStatuses(this.itemStatuses)
+    })
+
     this.socket.on(SERVER_RETURN_DOCS, (docs: ICodaDoc[]) => {
       console.info('[mover]', SERVER_RETURN_DOCS)
-      callback(docs)
-    })
-  }
+      const items = { ...this.items } // clone items
 
-  handleItemStatus (callback: (item: IItemStatus) => void) {
-    this.socket.on(ITEM_STATUS, (item: IItemStatus) => callback(item))
+      docs.forEach(doc => {
+        items[doc.id] = doc
+      })
+
+      this.items = items
+
+      onItems(Object.values(this.items))
+    })
   }
 }

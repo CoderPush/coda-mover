@@ -6,11 +6,17 @@ const apis = axios.create({
 })
 
 export const CodaApis = {
-  listDocs: async (token: string) => {
+  async listDocs (token: string, pageToken?: string) {
     const { data } = await apis.get('/docs', {
       headers: { Authorization: `Bearer ${token}` },
     })
 
-    return data?.items as ICodaApiDoc[] || []
+    const items = data.items as ICodaApiDoc[] || []
+    const nextPageToken: string | undefined = data.nextPageLink
+
+    return {
+      items,
+      nextPageToken,
+    }
   },
 }

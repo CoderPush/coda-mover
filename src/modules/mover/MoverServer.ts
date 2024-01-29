@@ -24,7 +24,7 @@ export class MoverServer {
   })
 
   private _socket: Socket | undefined
-  private items: Record<string, ICodaItem> = {}
+  items: Record<string, ICodaItem> = {}
 
   get socket (): Socket {
     if (!this._socket) {
@@ -67,28 +67,38 @@ export class MoverServer {
 
   handleClientSyncDocs () {
     this.socket.on(CLIENT_SYNC_DOCS, async (apiToken: string) => {
-      const apiDocs = await CodaApis.listDocs(apiToken)
-      const docs: ICodaDoc[] = apiDocs.map(doc => ({
-        id: doc.id,
-        name: doc.name,
-        treePath: '/',
-      }))
+      let listDocsResponse = await CodaApis.listDocs(apiToken)
 
-      this.socket.emit(SERVER_RETURN_DOCS, docs)
+      await this.processApiDocs(listDocsResponse.items)
 
-      apiDocs.forEach(doc => this.tasks.add({
-        id: doc.id,
-        context: {},
-        execute: async () => await this.syncDoc(doc),
-      }))
-
-      this.notifyStatus(CLIENT_SYNC_DOCS, 'done')
-      this.queuePersistingData()
-      this.tasks.next()
+      while (listDocsResponse.nextPageToken) {
+        listDocsResponse = await CodaApis.listDocs(apiToken, listDocsResponse.nextPageToken)
+        await this.processApiDocs(listDocsResponse.items)
+      }
     })
   }
 
-  private async syncDoc (doc: ICodaApiDoc) {
+  private async processApiDocs (apiDocs: ICodaApiDoc[]) {
+    const docs: ICodaDoc[] = apiDocs.map(doc => ({
+      id: doc.id,
+      name: doc.name,
+      treePath: '/',
+    }))
+
+    this.socket.emit(SERVER_RETURN_DOCS, docs)
+
+    apiDocs.forEach(doc => this.tasks.add({
+      id: doc.id,
+      context: {},
+      execute: async () => await this.syncApiDoc(doc),
+    }))
+
+    this.notifyStatus(CLIENT_SYNC_DOCS, 'done')
+    this.queuePersistingData()
+    this.tasks.next()
+  }
+
+  private async syncApiDoc (doc: ICodaApiDoc) {
     const syncedDoc = this.items[doc.id]
     const docFilePath = `${codaDocsPath}/${doc.name}`
     const updatedDoc = {

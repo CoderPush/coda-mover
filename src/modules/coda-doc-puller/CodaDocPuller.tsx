@@ -2,37 +2,34 @@
 
 import { CodaDocList } from './CodaDocList'
 import { useEffect, useState } from 'react'
-import type { ICodaItems } from './interfaces'
-import { MoverClient, type IItemStatuses, CLIENT_SYNC_DOCS } from '../mover/client'
+import { MoverClient, CLIENT_SYNC_DOCS, type IItemStatuses, type ICodaItems } from '../mover/client'
 
 export function CodaDocPuller () {
   const [apiToken, setApiToken] = useState('')
   const [items, setItems] = useState<ICodaItems>([])
   const [itemStatuses, setItemStatuses] = useState<IItemStatuses>({})
   const [mover, setMover] = useState<MoverClient | null>(null)
+  const message = !apiToken && 'Please provide Coda API token'
   const isSyncingDocs = itemStatuses[CLIENT_SYNC_DOCS] && itemStatuses[CLIENT_SYNC_DOCS].status !== 'done'
   const isPullButtonDisabled = !apiToken || isSyncingDocs
-  const message = !apiToken && 'Please provide Coda API token'
 
   useEffect(() => {
     if (mover) return
 
     // Ensure mover server started
-    // TODO: handle errors
-    void fetch('/api/mover')
+    fetch('/api/mover').then(() => {
+      const client = new MoverClient()
 
-    const client = new MoverClient()
+      client.handleServerResponses(
+        items => setItems(items),
+        itemStatuses => setItemStatuses(itemStatuses),
+      )
 
-    client.handleServerReturnDocs(docs => setItems(docs))
-    client.handleItemStatus(status => {
-      console.info('[mover] - ', status.id, status.status)
-      setItemStatuses(currentStatuses => ({
-        ...currentStatuses,
-        [status.id]: status,
-      }))
+      setMover(client)
+    }).catch(err => {
+      // TODO: show error to UI
+      console.error(err)
     })
-
-    setMover(client)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
