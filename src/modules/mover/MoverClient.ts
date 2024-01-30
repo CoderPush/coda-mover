@@ -2,6 +2,12 @@ import { io } from 'socket.io-client'
 import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS, SERVER_RETURN_PAGES } from './events'
 import type { ICodaDoc, IItemStatus, ICodaItem, ICodaItems, IItemStatuses, ICodaPage } from './interfaces'
 
+export interface IMoverClientHandlers {
+  onConnection?: (state: 'opened' | 'closed') => void
+  onItems?: (items: ICodaItems) => void
+  onStatuses?: (itemStatuses: Record<string, IItemStatus>) => void
+}
+
 export class MoverClient {
   items: Record<string, ICodaItem> = {}
   itemStatuses: IItemStatuses = {}
@@ -10,21 +16,26 @@ export class MoverClient {
     path: '/api/mover/io',
   })
 
-  constructor () {
-    this.socket.on('connect', () => {
-      console.info('[mover] connected')
-    })
-  }
-
   syncDocs (apiToken: string) {
     console.info('[mover]', CLIENT_SYNC_DOCS)
     this.socket.emit(CLIENT_SYNC_DOCS, apiToken)
   }
 
-  handleServerResponses (
-    onItems: (items: ICodaItems) => void,
-    onStatuses: (itemStatuses: Record<string, IItemStatus>) => void,
-  ) {
+  handleServerResponses ({
+    onConnection,
+    onItems,
+    onStatuses,
+  }: IMoverClientHandlers) {
+    this.socket.on('connect', () => {
+      console.info('[mover] connected')
+      onConnection?.('opened')
+    })
+
+    this.socket.on('disconnect', () => {
+      console.info('[mover] disconnected')
+      onConnection?.('closed')
+    })
+
     this.socket.on(ITEM_STATUS, (item: IItemStatus) => {
       console.info('[mover] - ', item.id, item.status)
       this.itemStatuses = {
@@ -32,7 +43,7 @@ export class MoverClient {
         [item.id]: item,
       }
 
-      onStatuses(this.itemStatuses)
+      onStatuses?.(this.itemStatuses)
     })
 
     this.socket.on(SERVER_RETURN_DOCS, (docs: ICodaDoc[]) => {
@@ -45,7 +56,7 @@ export class MoverClient {
 
       this.items = items
 
-      onItems(Object.values(this.items))
+      onItems?.(Object.values(this.items))
     })
 
     this.socket.on(SERVER_RETURN_PAGES, (pages: ICodaPage[]) => {
@@ -58,7 +69,7 @@ export class MoverClient {
 
       this.items = items
 
-      onItems(Object.values(this.items))
+      onItems?.(Object.values(this.items))
     })
   }
 }

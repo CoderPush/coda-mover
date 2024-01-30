@@ -1,10 +1,11 @@
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { type Socket } from 'socket.io'
-import { ensureDir, pathExists, readJson, rename, writeJson } from 'fs-extra'
+import { createWriteStream, ensureDir, pathExists, readJson, rename, writeJson } from 'fs-extra'
 import { resolve } from 'path'
 import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS, SERVER_RETURN_PAGES } from './events'
-import { CodaApis } from '../coda-doc-puller/CodaApis'
-import type { ICodaDoc, ICodaItem, ICodaItems, ICodaApiDoc, ICodaApiPage } from './interfaces'
+import { CodaApis, download } from '../coda-doc-puller/CodaApis'
+import type { ICodaDoc, ICodaItem, ICodaItems, ICodaApiDoc, ICodaApiPage, ICodaPage } from './interfaces'
+import { isAxiosError } from 'axios'
 
 const rootPath = resolve(__dirname, '../../../../').replace(/\\/g, '/') // fix path separator for windows
 const dataPath = `${rootPath}/data`
@@ -13,9 +14,20 @@ const codaDocsPath = `${dataPath}/docs`
 
 export class MoverServer {
   readonly tasks = new TaskEmitter({
-    concurrency: 10,
+    concurrency: 1,
     onItemError: (item, error) => {
-      console.error('[mover]', item.id, 'error', error)
+      if (isAxiosError(error)) {
+        console.error(
+          '[mover]',
+          item.id,
+          'request error',
+          error.response?.status,
+          error.response?.data,
+        )
+      } else {
+        console.error('[mover]', item.id, 'error', error)
+      }
+
       this.notifyStatus(item.id!, 'error', error.message)
     },
     onItemDone: item => {
@@ -104,23 +116,23 @@ export class MoverServer {
       this.tasks.add({
         id: doc.id,
         context: {},
-        execute: async () => await this.taskProcessDocOnFilesystem(doc, apiDocs[idx].updatedAt),
+        execute: async () => await this.queueProcessDocOnFilesystem(doc, apiDocs[idx].updatedAt),
         priority: TaskPriority.HIGH,
       })
 
       this.tasks.add({
         id: doc.id,
         context: {},
-        execute: async () => await this.taskListPagesPerDoc(doc, apiToken),
+        execute: async () => await this.queueListPagesPerDoc(doc, apiToken),
       })
     })
 
     this.tasks.next()
   }
 
-  async taskProcessDocOnFilesystem (doc: ICodaDoc, updatedAt: string) {
+  async queueProcessDocOnFilesystem (doc: ICodaDoc, updatedAt: string) {
     const restoredDoc = this.items[doc.id]
-    const docFilePath = `${codaDocsPath}/${doc.name}`
+    const docFilePath = `${codaDocsPath}/${doc.name.replace(/\//g, ' ')}`
     const syncedDoc = {
       id: doc.id,
       name: doc.name,
@@ -160,24 +172,24 @@ export class MoverServer {
     }
   }
 
-  async taskListPagesPerDoc (doc: ICodaDoc, apiToken: string) {
+  async queueListPagesPerDoc (doc: ICodaDoc, apiToken: string) {
     const docId = doc.id
 
     this.notifyStatus(docId, 'listing')
     let pageListingRes = await CodaApis.listPagesForDoc(apiToken, docId)
 
-    await this.processApiPages(doc, pageListingRes.items)
+    await this.processApiPages(doc, pageListingRes.items, apiToken)
 
     while (pageListingRes.nextPageToken) {
       pageListingRes = await CodaApis.listPagesForDoc(apiToken, docId, pageListingRes.nextPageToken)
 
-      await this.processApiPages(doc, pageListingRes.items)
+      await this.processApiPages(doc, pageListingRes.items, apiToken)
     }
 
     this.notifyStatus(docId, 'done')
   }
 
-  async processApiPages (doc: ICodaDoc, apiPages: ICodaApiPage[]) {
+  async processApiPages (doc: ICodaDoc, apiPages: ICodaApiPage[], apiToken: string) {
     const pages = apiPages.map((page, idx) => {
       const parentId = page.parent?.id
       let parent = doc
@@ -198,11 +210,80 @@ export class MoverServer {
         ...syncedPage,
       }
 
+      // allow canvas pages can be exported from Coda
+      if (page.contentType === 'canvas') {
+        this.tasks.add({
+          id: doc.id,
+          context: {},
+          execute: async () => await this.queueProcessPageOnFilesystem(
+            apiToken,
+            doc,
+            this.items[page.id],
+            apiPages[idx].updatedAt,
+          ),
+          priority: TaskPriority.HIGH,
+        })
+      }
+
       return this.items[page.id]
     })
 
     // return page updates or new pages
     this.socket.emit(SERVER_RETURN_PAGES, pages)
+  }
+
+  async queueProcessPageOnFilesystem (apiToken: string, doc: ICodaDoc, page: ICodaPage, updatedAt: string, exportId?: string) {
+    const parentId = page.treePath.replace(/\/$/, '').split('/').pop()
+    const parent = parentId && this.items[parentId]
+    if (!parent) throw Error('[process page] parent not found')
+    if (!parent.filePath) throw Error('[process page] parent not synced yet')
+
+    const parentDir = parent.filePath.replace(/(\/|\.[^.]+)$/, '')
+    const pageFilePath = `${parentDir}/${page.name.replace(/\//g, ' ')}.html`
+    const isDocOutdated = page.syncedAt && page.syncedAt < updatedAt
+    const isPathChanged = pageFilePath !== page.filePath
+    const isDocSyncedToFilesystem = page.filePath && await pathExists(page.filePath)
+
+    if (isDocSyncedToFilesystem && !isDocOutdated && !isPathChanged) return // nothing changed
+
+    this.notifyStatus(page.id, 'saving')
+    const syncedPage = {
+      ...page,
+      filePath: pageFilePath,
+    }
+
+    this.items[page.id] = syncedPage
+
+    if (!exportId) {
+      const exportRes = await CodaApis.exportPage(apiToken, doc.id, page.id)
+
+      exportId = exportRes.id
+    }
+
+    if (!exportId) throw Error('[process page] export id is required')
+
+    const pageExport = await CodaApis.getPageExport(apiToken, doc.id, page.id, exportId)
+
+    if (!pageExport.downloadLink) { // retry later
+      this.tasks.add({
+        id: page.id,
+        context: {},
+        execute: async () => await this.queueProcessPageOnFilesystem(apiToken, doc, page, updatedAt, exportId),
+        priority: TaskPriority.LOW,
+      })
+
+      return
+    }
+
+    this.items[page.id].syncedAt = this.getCurrentIsoDateTime()
+
+    await ensureDir(parentDir)
+    await download(pageExport.downloadLink, createWriteStream(syncedPage.filePath, {
+      flags: 'w',
+      encoding: 'utf8',
+    }))
+
+    this.notifyStatus(page.id, 'done')
   }
 
   queuePersistingData () {

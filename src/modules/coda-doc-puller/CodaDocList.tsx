@@ -14,7 +14,11 @@ export function CodaDocList ({ items, className, statuses }: ICodaDocListProps) 
 
   return (
     <section className={`menu-section ${className}`}>
-      {!isLoading && (<span className='menu-title'>Found {items.length} docs</span>)}
+      {!isLoading && (
+        <span className='menu-title'>
+          Found {docs.length} docs and {items.length - docs.length} pages
+        </span>
+      )}
       <menu className='menu-items gap-1'>
         {docs.map(doc => (
           <CodaItem key={doc.id} data={doc} items={items} statuses={statuses} />

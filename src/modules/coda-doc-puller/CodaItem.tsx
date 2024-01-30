@@ -14,13 +14,13 @@ export function CodaItem ({ data, items, statuses }: ICodaItemProps) {
   const hasInnerPages = innerPages.length > 0
 
   return (
-    <li key={data.id}>
+    <li key={data.id} data-id={data.id}>
       {hasInnerPages && <input type='checkbox' id={`toggle--${data.id}`} className='menu-toggle [&:defaultChecked~.menu-item>.menu-icon]:-rotate-90' />}
       <div className='flex items-center'>
         <input type='checkbox' className='checkbox' />
         <label className='menu-item menu-item-no-animation basis-4/5 overflow-hidden justify-between grow px-3 ml-2' htmlFor={`toggle--${data.id}`}>
           <span className='text-ellipsis whitespace-nowrap overflow-hidden grow'>{data.name}</span>
-          <CodaItemStatus status={statuses[data.id]?.status} />
+          <CodaItemStatus status={statuses[data.id]?.status} message={statuses[data.id]?.message} />
           {hasInnerPages && (
             <span className='menu-icon'>
               <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth='1.5' className='w-4 h-4 stroke-content3'>

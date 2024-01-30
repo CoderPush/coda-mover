@@ -8,10 +8,17 @@ export function CodaDocPuller () {
   const [apiToken, setApiToken] = useState('')
   const [items, setItems] = useState<ICodaItems>([])
   const [itemStatuses, setItemStatuses] = useState<IItemStatuses>({})
+  const [isConnected, setIsConnected] = useState(false)
   const [mover, setMover] = useState<MoverClient | null>(null)
-  const message = !apiToken && 'Please provide Coda API token'
   const isSyncingDocs = itemStatuses[CLIENT_SYNC_DOCS] && itemStatuses[CLIENT_SYNC_DOCS].status !== 'done'
-  const isPullButtonDisabled = !apiToken || isSyncingDocs
+  const isPullButtonDisabled = !apiToken || !isConnected || isSyncingDocs
+  let message = ''
+
+  if (!apiToken) {
+    message = 'Please provide Coda API token'
+  } else if (!isConnected) {
+    message = 'Please wait for connection'
+  }
 
   useEffect(() => {
     if (mover) return
@@ -20,10 +27,11 @@ export function CodaDocPuller () {
     fetch('/api/mover').then(() => {
       const client = new MoverClient()
 
-      client.handleServerResponses(
-        items => setItems(items),
-        itemStatuses => setItemStatuses(itemStatuses),
-      )
+      client.handleServerResponses({
+        onConnection: state => setIsConnected(state === 'opened'),
+        onItems: items => setItems(items),
+        onStatuses: itemStatuses => setItemStatuses(itemStatuses),
+      })
 
       setMover(client)
     }).catch(err => {
