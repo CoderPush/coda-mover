@@ -1,7 +1,9 @@
 Coda Mover
 =====
 
+![build][badge-build]
 ![ts](https://badgen.net/badge/-/TypeScript/blue?icon=typescript&label)
+[![changelog][badge-changelog]](/CHANGELOG.md)
 
 Coda contents migration made simple
 
@@ -93,3 +95,6 @@ Please ensure you are using Eslint extension `v2.4.2` or older. Their latest rel
 
 [issues]: https://github.com/CoderPush/coda-mover/issues
 [good-first]: https://github.com/CoderPush/coda-mover/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22
+
+[badge-build]: https://github.com/CoderPush/coda-mover/actions/workflows/build.yaml/badge.svg
+[badge-changelog]: https://img.shields.io/badge/changelog-8A2BE2
