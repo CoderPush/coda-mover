@@ -1,16 +1,10 @@
 import { io } from 'socket.io-client'
 import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS, SERVER_RETURN_PAGES } from './events'
-import type { ICodaDoc, IItemStatus, ICodaItem, ICodaItems, IItemStatuses, ICodaPage } from './interfaces'
+import type { ICodaDoc, IItemStatus, ICodaItem, IItemStatuses, ICodaPage, IMoverClient, IMoverClientHandlers } from './interfaces'
 
-export interface IMoverClientHandlers {
-  onConnection?: (state: 'opened' | 'closed') => void
-  onItems?: (items: ICodaItems) => void
-  onStatuses?: (itemStatuses: Record<string, IItemStatus>) => void
-}
-
-export class MoverClient {
-  items: Record<string, ICodaItem> = {}
-  itemStatuses: IItemStatuses = {}
+export class MoverClient implements IMoverClient {
+  private items: Record<string, ICodaItem> = {}
+  private itemStatuses: IItemStatuses = {}
 
   readonly socket = io('/', {
     path: '/api/mover/io',
@@ -25,7 +19,7 @@ export class MoverClient {
     onConnection,
     onItems,
     onStatuses,
-  }: IMoverClientHandlers) {
+  }: IMoverClientHandlers = {}) {
     this.socket.on('connect', () => {
       console.info('[mover] connected')
       onConnection?.('opened')

@@ -1,7 +1,6 @@
 import type { HTMLAttributes } from 'react'
-import type { ICodaItems } from './interfaces'
+import { CLIENT_SYNC_DOCS, type ICodaItems, type IItemStatuses } from '../mover/client'
 import { CodaItem } from './CodaItem'
-import { CLIENT_SYNC_DOCS, type IItemStatuses } from '../mover/client'
 
 export interface ICodaDocListProps extends HTMLAttributes<HTMLElement> {
   items: ICodaItems

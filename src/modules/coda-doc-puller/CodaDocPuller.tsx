@@ -10,14 +10,16 @@ export function CodaDocPuller () {
   const [itemStatuses, setItemStatuses] = useState<IItemStatuses>({})
   const [isConnected, setIsConnected] = useState(false)
   const [mover, setMover] = useState<MoverClient | null>(null)
-  const isSyncingDocs = itemStatuses[CLIENT_SYNC_DOCS] && itemStatuses[CLIENT_SYNC_DOCS].status !== 'done'
+  const isSyncingDocs = itemStatuses[CLIENT_SYNC_DOCS] && itemStatuses[CLIENT_SYNC_DOCS].status === 'listing'
   const isPullButtonDisabled = !apiToken || !isConnected || isSyncingDocs
-  let message = ''
+  let message: string | undefined
 
   if (!apiToken) {
     message = 'Please provide Coda API token'
   } else if (!isConnected) {
     message = 'Please wait for connection'
+  } else if (itemStatuses[CLIENT_SYNC_DOCS] && itemStatuses[CLIENT_SYNC_DOCS].status === 'error') {
+    message = itemStatuses[CLIENT_SYNC_DOCS].message
   }
 
   useEffect(() => {
