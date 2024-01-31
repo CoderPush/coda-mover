@@ -7,9 +7,11 @@ export interface ICodaDocPullerFormProps extends HTMLAttributes<HTMLFormElement>
 
 export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
   const [apiToken, setApiToken] = useState('')
-  const { isConnected, itemStatuses, isSyncingDocs, syncDocs } = useClient()
+  const { isConnected, itemStatuses, isSyncingDocs, syncDocs, selectedItemIds } = useClient()
   const isDocListingError = itemStatuses?.[CLIENT_SYNC_DOCS]?.status === 'error'
-  const isPullButtonDisabled = !apiToken || !isConnected || isSyncingDocs
+  const hasSelectedItems = selectedItemIds.length > 0
+  const isFormDisabled = !isConnected || isSyncingDocs || hasSelectedItems
+  const isPullButtonDisabled = !apiToken || isFormDisabled
 
   let message: string | undefined
 
@@ -33,6 +35,7 @@ export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
             className='input max-w-full'
             value={apiToken}
             onChange={ev => setApiToken(ev.target.value)}
+            disabled={isFormDisabled}
           />
         </div>
       </div>
