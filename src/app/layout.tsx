@@ -17,12 +17,12 @@ export default function RootLayout ({
 }>) {
   return (
     <html lang='en'>
-      <body className={inter.className}>
+      <body className={`flex flex-col max-h-screen ${inter.className}`}>
         <header className='p-4'>
           <h1 className='mb-1'>{metadata.title as string}</h1>
-          <p className='text-zinc-600'>{metadata.description!}</p>
+          <p className='text-zinc-600 pb-0'>{metadata.description!}</p>
         </header>
-        <main className='px-4'>
+        <main className='px-4 flex flex-col overflow-hidden'>
           {children}
         </main>
       </body>

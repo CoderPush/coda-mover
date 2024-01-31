@@ -41,9 +41,12 @@ export interface IMoverClientHandlers {
   onItems?: (items: ICodaItems) => void
   onStatuses?: (itemStatuses: Record<string, IItemStatus>) => void
   onProgress?: (progress: number) => void
+  onSelectionChange?: (selectedItemIds: string[]) => void
 }
 
 export interface IMoverClient {
   syncDocs: (apiToken: string) => void
-  handleServerResponses: (handlers: IMoverClientHandlers) => void
+  handleServerResponses: () => void
+  select: (...itemIds: string[]) => void
+  deselect: (...itemIds: string[]) => void
 }

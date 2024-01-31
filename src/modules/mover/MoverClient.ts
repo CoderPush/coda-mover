@@ -5,6 +5,9 @@ import type { ICodaDoc, IItemStatus, ICodaItem, IItemStatuses, ICodaPage, IMover
 export class MoverClient implements IMoverClient {
   private items: Record<string, ICodaItem> = {}
   private itemStatuses: IItemStatuses = {}
+  private selectedItemIds: string[] = []
+
+  constructor (private readonly handlers: IMoverClientHandlers = {}) {}
 
   readonly socket = io('/', {
     path: '/api/mover/io',
@@ -15,19 +18,15 @@ export class MoverClient implements IMoverClient {
     this.socket.emit(CLIENT_SYNC_DOCS, apiToken)
   }
 
-  handleServerResponses ({
-    onConnection,
-    onItems,
-    onStatuses,
-  }: IMoverClientHandlers = {}) {
+  handleServerResponses () {
     this.socket.on('connect', () => {
       console.info('[mover] connected')
-      onConnection?.('opened')
+      this.handlers.onConnection?.('opened')
     })
 
     this.socket.on('disconnect', () => {
       console.info('[mover] disconnected')
-      onConnection?.('closed')
+      this.handlers.onConnection?.('closed')
     })
 
     this.socket.on(ITEM_STATUS, (item: IItemStatus) => {
@@ -37,7 +36,7 @@ export class MoverClient implements IMoverClient {
         [item.id]: item,
       }
 
-      onStatuses?.(this.itemStatuses)
+      this.handlers.onStatuses?.(this.itemStatuses)
     })
 
     this.socket.on(SERVER_RETURN_DOCS, (docs: ICodaDoc[]) => {
@@ -50,7 +49,7 @@ export class MoverClient implements IMoverClient {
 
       this.items = items
 
-      onItems?.(Object.values(this.items))
+      this.handlers.onItems?.(Object.values(this.items))
     })
 
     this.socket.on(SERVER_RETURN_PAGES, (pages: ICodaPage[]) => {
@@ -63,7 +62,57 @@ export class MoverClient implements IMoverClient {
 
       this.items = items
 
-      onItems?.(Object.values(this.items))
+      this.handlers.onItems?.(Object.values(this.items))
     })
+  }
+
+  select (...itemIds: string[]) {
+    itemIds.forEach(id => { // propagate selection into inner pages
+      this.getInnerPages(id).forEach(page => {
+        itemIds.push(page.id)
+      })
+    })
+
+    this.selectUnqueuedItems(itemIds)
+    this.handlers.onSelectionChange?.([...this.selectedItemIds])
+  }
+
+  deselect (...itemIds: string[]) {
+    itemIds.forEach(id => { // propagate deselection into inner pages
+      this.getInnerPages(id).forEach(page => {
+        itemIds.push(page.id)
+      })
+    })
+
+    this.selectedItemIds = this.selectedItemIds.filter(id => !itemIds.includes(id))
+    this.handlers.onSelectionChange?.([...this.selectedItemIds])
+  }
+
+  private selectUnqueuedItems (itemIds: string[]) {
+    const selectedItemIds = [...this.selectedItemIds]
+
+    itemIds.forEach(id => {
+      if (!selectedItemIds.includes(id)) {
+        selectedItemIds.push(id)
+      }
+    })
+
+    this.selectedItemIds = selectedItemIds
+  }
+
+  private getInnerPages (itemId: string): ICodaPage[] {
+    const item = this.items[itemId]
+    if (!item) return []
+
+    const itemTreePath = item.treePath
+    const innerPages: ICodaPage[] = []
+
+    Object.values(this.items).forEach((page: ICodaPage) => {
+      if (page.treePath.startsWith(`${itemTreePath}${item.id}/`) && page.id !== itemId) {
+        innerPages.push(page)
+      }
+    })
+
+    return innerPages
   }
 }
