@@ -51,3 +51,29 @@ export interface ICodaApis {
     exportId: string,
   ) => Promise<{ status: string, downloadLink: string }>
 }
+
+export interface IOutlineCollection {
+  id: string
+  name: string
+  permission: 'read' | 'read_write'
+  private: boolean
+}
+
+export interface IOutlineDocument {
+  id: string
+  name: string
+  collectionId: string
+  parentDocumentId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type IOutlineCollectionInput = Omit<Partial<IOutlineCollection>, 'id'>
+
+export interface IOutlineApis {
+  listCollections: (offset?: number) => Promise<IOutlineCollection[]>
+  searchDocuments: (collectionId: string, query: string) => Promise<IOutlineDocument[]>
+  createCollection: (collection: IOutlineCollectionInput) => Promise<IOutlineCollection>
+  archiveDocument: (documentId: string) => Promise<void>
+  importDocumentByFile: (collectionId: string, filePath: string, parentDocumentId?: string) => Promise<IOutlineDocument>
+}

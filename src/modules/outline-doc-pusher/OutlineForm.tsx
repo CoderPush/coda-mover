@@ -128,7 +128,7 @@ export function OutlineForm () {
         <div className='form-control justify-between mt-2'>
           <label
             htmlFor='drawer-right'
-            className='btn hover:bg-gray-200 w-full cursor-pointer!'
+            className='btn hover:bg-gray-200 w-full cursor-pointer! disabled'
             onClick={ev => {
               ev.stopPropagation()
               // ev.preventDefault()
