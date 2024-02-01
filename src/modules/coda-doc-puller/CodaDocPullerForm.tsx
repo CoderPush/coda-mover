@@ -32,7 +32,7 @@ export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
             name='apiToken'
             placeholder='Type here'
             type='password'
-            className='input max-w-full'
+            className='input max-w-full focus:ring-1 ring-indigo-500'
             value={apiToken}
             onChange={ev => setApiToken(ev.target.value)}
             disabled={isFormDisabled}

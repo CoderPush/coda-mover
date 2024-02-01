@@ -1,6 +1,7 @@
 'use client'
 
 import { useClient } from '../mover/client'
+import { OutlineForm } from './OutlineForm'
 
 export function OutlineDocPusher () {
   const { selectedItemIds } = useClient()
@@ -15,14 +16,22 @@ export function OutlineDocPusher () {
             items selected
           </h5>
 
-          <button
-            type='button'
+          <label
+            htmlFor='drawer-right'
             className='btn btn-primary font-bold cursor-pointer! bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl'
           >
             Push to Outline
-          </button>
+          </label>
         </div>
       )}
+      <input type='checkbox' id='drawer-right' className='drawer-toggle' />
+      <label className='overlay' htmlFor='drawer-right' />
+      <div className='drawer drawer-right'>
+        <div className='drawer-content flex flex-col h-full'>
+          <OutlineForm />
+        </div>
+      </div>
+
     </div>
   )
 }
