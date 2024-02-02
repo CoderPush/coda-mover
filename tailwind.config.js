@@ -26,4 +26,9 @@ module.exports = {
   plugins: [
     require('rippleui'),
   ],
+  /** @type {import('rippleui').Config} */
+  rippleui: {
+    defaultStyle: false,
+    removeThemes: ['dark'],
+  },
 }

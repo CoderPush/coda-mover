@@ -36,14 +36,65 @@ export interface IPuller {
   // cleanup
 }
 
+export interface IImport {
+  id: string
+  items: ICodaItems
+  issues: string[]
+  instructions: IImportInstruction[]
+  logs: IImportLog[]
+  createdAt: string
+  itemIdMap: Record<string, string>
+}
+
+export interface IImportLog {
+  level: 'info' | 'error' | 'success'
+  message: string
+}
+
+export interface IImportInstruction {
+  id: number
+  name: keyof IPusherInstructors | 'skip'
+  reason?: string
+  itemId: string
+  collectionId?: string
+  documentId?: string
+}
+
+export interface IPusherInstructors {
+  createCollectionAsPrivate: (instruction: IImportInstruction) => Promise<void>
+  archiveOutdatedPage: (instruction: IImportInstruction) => Promise<void>
+  importAndPublishPage: (instruction: IImportInstruction) => Promise<void>
+}
+
+export interface IPusher extends IPusherInstructors {
+  readonly data: IImport
+
+  validate: () => Promise<void>
+  validateCollectionTree: () => Promise<void>
+  revalidatePages: () => Promise<void>
+
+  process: () => Promise<void>
+  returnIssues: (issues: string[]) => void
+  returnProgressLogs: (logs: IImportLog[]) => void
+}
+
 export interface IMoverClientHandlers {
   onConnection?: (state: 'opened' | 'closed') => void
   onItems?: (items: ICodaItems) => void
   onStatuses?: (itemStatuses: Record<string, IItemStatus>) => void
   onProgress?: (progress: number) => void
+  onSelectionChange?: (selectedItemIds: string[]) => void
+  onImportIssues?: (issues: string[]) => void
+  onImportLogs?: (logs: IImportLog[]) => void
 }
 
 export interface IMoverClient {
   syncDocs: (apiToken: string) => void
-  handleServerResponses: (handlers: IMoverClientHandlers) => void
+
+  importToOutline: (importId: string, apiToken: string) => void
+  confirmImport: (importId: string) => void
+
+  handleServerResponses: () => void
+  select: (...itemIds: string[]) => void
+  deselect: (...itemIds: string[]) => void
 }

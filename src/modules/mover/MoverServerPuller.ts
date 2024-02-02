@@ -1,15 +1,10 @@
 import { createWriteStream, ensureDir, pathExists, readJson, rename, writeJson } from 'fs-extra'
 import { CLIENT_SYNC_DOCS, SERVER_RETURN_DOCS, SERVER_RETURN_PAGES } from './events'
 import type { ICodaApiDoc, ICodaApiPage, ICodaDoc, ICodaItem, ICodaPage, IPuller, ICodaItems, IMoverServer } from './interfaces'
-import { resolve } from 'path'
 import { TaskPriority } from '@abxvn/tasks'
 import type { ICodaApis } from './apis/interfaces'
 import { download } from './apis'
-
-const rootPath = resolve(__dirname, '../../../../').replace(/\\/g, '/') // fix path separator for windows
-const dataPath = `${rootPath}/data`
-const codaJsonPath = `${dataPath}/coda.json`
-const codaDocsPath = `${dataPath}/docs`
+import { codaDocsPath, codaJsonPath } from './paths'
 
 export class MoverServerPuller implements IPuller {
   private _exportingCount = 0
@@ -172,10 +167,9 @@ export class MoverServerPuller implements IPuller {
         treePath,
       }
 
-      this.items[page.id] = syncedPage
-
       // allow canvas pages can be exported from Coda
       if (page.contentType === 'canvas') {
+        this.items[page.id] = syncedPage
         this.server.queue(
           page.id,
           async () => await this.revalidateAndSavePage(
@@ -184,10 +178,15 @@ export class MoverServerPuller implements IPuller {
             apiPages[idx].updatedAt,
           )
         )
-      }
 
-      return syncedPage
-    })
+        return syncedPage
+      } else {
+        // remove non canvas pages
+        delete this.items[page.id] // eslint-disable-line @typescript-eslint/no-dynamic-delete
+
+        return null
+      }
+    }).filter(Boolean) as ICodaPage[]
 
     // return page updates or new pages
     this.returnPages(pages)
@@ -256,7 +255,6 @@ export class MoverServerPuller implements IPuller {
   }
 
   async saveData () {
-    await ensureDir(dataPath)
     await writeJson(codaJsonPath, Object.values(this.items))
   }
 
