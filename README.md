@@ -7,6 +7,8 @@ Coda Mover
 
 Coda contents migration made simple
 
+<img width="912" alt="image" src="https://github.com/CoderPush/coda-mover/assets/13363340/94c66463-7d97-4f70-808f-c2ee28b01fb6">
+
 Development
 -----
 ### Prerequisites
