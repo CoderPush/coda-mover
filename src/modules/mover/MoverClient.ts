@@ -1,6 +1,24 @@
 import { io } from 'socket.io-client'
-import { CLIENT_SYNC_DOCS, ITEM_STATUS, SERVER_RETURN_DOCS, SERVER_RETURN_PAGES } from './events'
-import type { ICodaDoc, IItemStatus, ICodaItem, IItemStatuses, ICodaPage, IMoverClient, IMoverClientHandlers } from './interfaces'
+import {
+  CLIENT_CONFIRM_IMPORT,
+  CLIENT_IMPORT_OUTLINE,
+  CLIENT_SYNC_DOCS,
+  ITEM_STATUS,
+  SERVER_IMPORT_ISSUES,
+  SERVER_IMPORT_LOGS,
+  SERVER_RETURN_DOCS,
+  SERVER_RETURN_PAGES,
+} from './events'
+import type {
+  ICodaDoc,
+  IItemStatus,
+  ICodaItem,
+  IItemStatuses,
+  ICodaPage,
+  IMoverClient,
+  IMoverClientHandlers,
+  IImportLog,
+} from './interfaces'
 
 export class MoverClient implements IMoverClient {
   private items: Record<string, ICodaItem> = {}
@@ -18,6 +36,33 @@ export class MoverClient implements IMoverClient {
     this.socket.emit(CLIENT_SYNC_DOCS, apiToken)
   }
 
+  importToOutline (importId: string, apiToken: string) {
+    const selectedItems: Record<string, ICodaItem> = {}
+
+    this.selectedItemIds.forEach(id => { // propagate selection into inner pages
+      const item = this.items[id]
+      if (!item) return
+
+      selectedItems[id] = item
+      this.getOuterPages(id).forEach(page => {
+        selectedItems[page.id] = page
+      })
+    })
+
+    console.info('[mover]', CLIENT_IMPORT_OUTLINE)
+    this.socket.emit(
+      CLIENT_IMPORT_OUTLINE,
+      importId,
+      apiToken,
+      Object.values(selectedItems),
+    )
+  }
+
+  confirmImport (importId: string) {
+    console.info('[mover]', CLIENT_CONFIRM_IMPORT, importId)
+    this.socket.emit(CLIENT_CONFIRM_IMPORT, importId)
+  }
+
   handleServerResponses () {
     this.socket.on('connect', () => {
       console.info('[mover] connected')
@@ -30,7 +75,7 @@ export class MoverClient implements IMoverClient {
     })
 
     this.socket.on(ITEM_STATUS, (item: IItemStatus) => {
-      console.info('[mover] - ', item.id, item.status)
+      console.info('[mover] »', item.id, item.status)
       this.itemStatuses = {
         ...this.itemStatuses,
         [item.id]: item,
@@ -63,6 +108,14 @@ export class MoverClient implements IMoverClient {
       this.items = items
 
       this.handlers.onItems?.(Object.values(this.items))
+    })
+
+    this.socket.on(SERVER_IMPORT_ISSUES, (issues: string[]) => {
+      this.handlers.onImportIssues?.(issues)
+    })
+
+    this.socket.on(SERVER_IMPORT_LOGS, (logs: IImportLog[]) => {
+      this.handlers.onImportLogs?.(logs)
     })
   }
 
@@ -114,5 +167,15 @@ export class MoverClient implements IMoverClient {
     })
 
     return innerPages
+  }
+
+  private getOuterPages (itemId: string): ICodaPage[] {
+    const item = this.items[itemId]
+    if (!item) return []
+
+    const itemTreePath = item.treePath.replace(/^\/|\/$/g, '')
+    const outerPageIds: string[] = itemTreePath.split('/')
+
+    return outerPageIds.map(id => this.items[id]).filter(Boolean) as ICodaPage[]
   }
 }

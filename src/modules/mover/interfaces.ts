@@ -53,7 +53,7 @@ export interface IImportLog {
 
 export interface IImportInstruction {
   id: number
-  name: keyof IPusherInstructors
+  name: keyof IPusherInstructors | 'skip'
   reason?: string
   itemId: string
   collectionId?: string
@@ -84,10 +84,16 @@ export interface IMoverClientHandlers {
   onStatuses?: (itemStatuses: Record<string, IItemStatus>) => void
   onProgress?: (progress: number) => void
   onSelectionChange?: (selectedItemIds: string[]) => void
+  onImportIssues?: (issues: string[]) => void
+  onImportLogs?: (logs: IImportLog[]) => void
 }
 
 export interface IMoverClient {
   syncDocs: (apiToken: string) => void
+
+  importToOutline: (importId: string, apiToken: string) => void
+  confirmImport: (importId: string) => void
+
   handleServerResponses: () => void
   select: (...itemIds: string[]) => void
   deselect: (...itemIds: string[]) => void

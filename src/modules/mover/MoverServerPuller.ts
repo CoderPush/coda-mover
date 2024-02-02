@@ -172,10 +172,9 @@ export class MoverServerPuller implements IPuller {
         treePath,
       }
 
-      this.items[page.id] = syncedPage
-
       // allow canvas pages can be exported from Coda
       if (page.contentType === 'canvas') {
+        this.items[page.id] = syncedPage
         this.server.queue(
           page.id,
           async () => await this.revalidateAndSavePage(
@@ -184,10 +183,15 @@ export class MoverServerPuller implements IPuller {
             apiPages[idx].updatedAt,
           )
         )
-      }
 
-      return syncedPage
-    })
+        return syncedPage
+      } else {
+        // remove non canvas pages
+        delete this.items[page.id] // eslint-disable-line @typescript-eslint/no-dynamic-delete
+
+        return null
+      }
+    }).filter(Boolean) as ICodaPage[]
 
     // return page updates or new pages
     this.returnPages(pages)

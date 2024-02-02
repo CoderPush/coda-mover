@@ -4,6 +4,7 @@ import type {
   IOutlineCollectionInput,
   IOutlineDocument,
   IOutlineApis,
+  IOutlineSearchDocumentResult,
 } from './interfaces'
 import { createReadStream, pathExists } from 'fs-extra'
 import FormData from 'form-data'
@@ -34,7 +35,8 @@ export class OutlineApis implements IOutlineApis {
       includeDrafts: false,
     })
 
-    const items: IOutlineDocument[] = data.data || []
+    const results: IOutlineSearchDocumentResult[] = data.data || []
+    const items: IOutlineDocument[] = results.map(result => result.document)
 
     return items
   }
@@ -43,7 +45,6 @@ export class OutlineApis implements IOutlineApis {
     if (!collection.name) throw Error('[outline] collection name is required')
 
     const { data } = await this.apis.post('/collections.create', {
-      permission: 'read',
       private: true,
       ...collection,
     })
@@ -61,8 +62,9 @@ export class OutlineApis implements IOutlineApis {
     const formData = new FormData()
 
     formData.append('collectionId', collectionId)
-    formData.append('parentDocumentId', parentDocumentId || '')
     formData.append('file', createReadStream(filePath))
+    formData.append('publish', 'true')
+    parentDocumentId && formData.append('parentDocumentId', parentDocumentId)
 
     const { data } = await this.apis.post('/documents.import', formData)
 

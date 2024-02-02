@@ -55,20 +55,27 @@ export interface ICodaApis {
 export interface IOutlineCollection {
   id: string
   name: string
-  permission: 'read' | 'read_write'
-  private: boolean
+  permission: 'read' | 'read_write' | null
+  sharing: boolean
 }
 
 export interface IOutlineDocument {
   id: string
-  name: string
+  title: string
   collectionId: string
   parentDocumentId?: string
   createdAt: string
   updatedAt: string
 }
 
-export type IOutlineCollectionInput = Omit<Partial<IOutlineCollection>, 'id'>
+export interface IOutlineSearchDocumentResult {
+  context: string
+  document: IOutlineDocument
+}
+
+export interface IOutlineCollectionInput extends Omit<Partial<IOutlineCollection>, 'id'> {
+  private?: boolean
+}
 
 export interface IOutlineApis {
   listCollections: (offset?: number) => Promise<IOutlineCollection[]>

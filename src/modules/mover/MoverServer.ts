@@ -1,13 +1,17 @@
 import { type ITaskPriority, TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { type Socket } from 'socket.io'
-import { CLIENT_SYNC_DOCS, ITEM_STATUS } from './events'
-import type { ICodaItem, IMoverServer, IPuller } from './interfaces'
+import { CLIENT_CONFIRM_IMPORT, CLIENT_IMPORT_OUTLINE, CLIENT_SYNC_DOCS, ITEM_STATUS } from './events'
+import type { ICodaItem, IImport, IMoverServer, IPuller, IPusher } from './interfaces'
 import { isAxiosError } from 'axios'
 import { MoverServerPuller } from './MoverServerPuller'
 import { CodaApis } from './apis'
+import { MoverServerOutlinePusher } from './MoverServerOutlinePusher'
+import { OutlineApis } from './apis/OutlineApis'
 
 export class MoverServer implements IMoverServer {
   readonly pullers: Record<string, IPuller> = {}
+  readonly pushers: Record<string, IPusher> = {}
+
   readonly tasks = new TaskEmitter({
     concurrency: 3,
     onItemError: (item, error) => {
@@ -20,7 +24,10 @@ export class MoverServer implements IMoverServer {
       this.logError(error, item.id)
     },
     onItemDone: item => {
-      this.notifyStatus(item.id!, 'done')
+      if (!item.id) return
+      if (item.id.startsWith('import:')) return
+
+      this.notifyStatus(item.id, 'done')
     },
   })
 
@@ -42,6 +49,7 @@ export class MoverServer implements IMoverServer {
 
     try {
       this.handleClientSyncDocs()
+      this.handleClientImportToOutline()
     } catch (err: any) {
       console.error('[mover] handle requests', err)
       this.notifyStatus('handle requests', 'error', err.message as string)
@@ -53,6 +61,41 @@ export class MoverServer implements IMoverServer {
       const puller = this.pullers[apiToken] = new MoverServerPuller(this, new CodaApis(apiToken))
 
       await puller.syncDocs()
+      this.tasks.next()
+    })
+  }
+
+  handleClientImportToOutline () {
+    this.socket.on(CLIENT_IMPORT_OUTLINE, async (importId: string, apiToken: string, items: ICodaItem[]) => {
+      const importData: IImport = {
+        id: importId,
+        items,
+        issues: [],
+        logs: [],
+        instructions: [],
+        itemIdMap: {},
+        createdAt: (new Date()).toISOString(),
+      }
+
+      if (!this.pullers[importId]) {
+        this.pushers[importId] = new MoverServerOutlinePusher(
+          importData,
+          this,
+          new OutlineApis(apiToken),
+        )
+      }
+
+      const pusher = this.pushers[importId]
+
+      this.queue(`import:${importId}`, async () => await pusher.validate())
+      this.tasks.next()
+    })
+
+    this.socket.on(CLIENT_CONFIRM_IMPORT, (importId: string) => {
+      const pusher = this.pushers[importId]
+      if (!pusher) this.notifyStatus(`import:${importId}`, 'error', 'Unrecognized import id')
+
+      this.queue(`import:${importId}`, async () => await pusher.process())
       this.tasks.next()
     })
   }
