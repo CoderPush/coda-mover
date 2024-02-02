@@ -184,10 +184,13 @@ export class MoverServerOutlinePusher implements IPusher {
     }
 
     const importedDocument = await this.apis.importDocumentByFile(collectionId, page.filePath, parentOutlineDocumentId)
+    const importedDocumentId = importedDocument.id
 
     this.addLog({ level: 'success', message: `Imported page ${page.name}` })
 
-    this.data.itemIdMap[pageId] = importedDocument.id
+    this.data.itemIdMap[pageId] = importedDocumentId
+
+    await this.apis.updateDocument({ id: importedDocumentId, title: page.name })
   }
 
   returnProgressLogs (logs: IImportLog[]) {

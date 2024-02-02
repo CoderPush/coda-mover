@@ -5,6 +5,7 @@ import type {
   IOutlineDocument,
   IOutlineApis,
   IOutlineSearchDocumentResult,
+  IOutlineDocumentUpdateInput,
 } from './interfaces'
 import { createReadStream, pathExists } from 'fs-extra'
 import FormData from 'form-data'
@@ -67,6 +68,12 @@ export class OutlineApis implements IOutlineApis {
     parentDocumentId && formData.append('parentDocumentId', parentDocumentId)
 
     const { data } = await this.apis.post('/documents.import', formData)
+
+    return data.data
+  }
+
+  async updateDocument (document: IOutlineDocumentUpdateInput) {
+    const { data } = await this.apis.post('/documents.update', document)
 
     return data.data
   }

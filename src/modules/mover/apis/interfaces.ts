@@ -77,10 +77,16 @@ export interface IOutlineCollectionInput extends Omit<Partial<IOutlineCollection
   private?: boolean
 }
 
+export interface IOutlineDocumentUpdateInput {
+  id: IOutlineDocument['id']
+  title?: string
+}
+
 export interface IOutlineApis {
   listCollections: (offset?: number) => Promise<IOutlineCollection[]>
   searchDocuments: (collectionId: string, query: string) => Promise<IOutlineDocument[]>
   createCollection: (collection: IOutlineCollectionInput) => Promise<IOutlineCollection>
   archiveDocument: (documentId: string) => Promise<void>
   importDocumentByFile: (collectionId: string, filePath: string, parentDocumentId?: string) => Promise<IOutlineDocument>
+  updateDocument: (document: IOutlineDocumentUpdateInput) => Promise<IOutlineDocument>
 }
