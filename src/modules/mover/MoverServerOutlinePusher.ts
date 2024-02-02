@@ -1,4 +1,4 @@
-import { pathExists } from 'fs-extra'
+import { ensureDir, pathExists, writeJson } from 'fs-extra'
 import { SERVER_IMPORT_ISSUES, SERVER_IMPORT_LOGS, STATUS_IMPORT_CONFIRMING, STATUS_IMPORT_DONE, STATUS_IMPORT_PROCESSING, STATUS_IMPORT_VALIDATING } from './events'
 import type {
   ICodaDoc,
@@ -10,8 +10,11 @@ import type {
   IOutlineApis,
   IPusher,
 } from './interfaces'
+import { importsPath } from './paths'
+import { TaskPriority } from '@abxvn/tasks'
 
 export class MoverServerOutlinePusher implements IPusher {
+  static readonly CONNECTOR_ID = 'outline'
   private _processedInstructionCount = 0
 
   constructor (
@@ -107,6 +110,15 @@ export class MoverServerOutlinePusher implements IPusher {
         await this.processInstruction(instruction)
       })
     })
+
+    const processTimestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '')
+
+    // save import data for debugging
+    this.server.queue(
+      'save import data',
+      async () => await this.saveData(`${MoverServerOutlinePusher.CONNECTOR_ID}-${processTimestamp}.json`),
+      TaskPriority.IDLE,
+    )
   }
 
   private async processInstruction (instruction: IImportInstruction) {
@@ -195,6 +207,11 @@ export class MoverServerOutlinePusher implements IPusher {
 
   returnProgressLogs (logs: IImportLog[]) {
     this.server.emit(SERVER_IMPORT_LOGS, logs)
+  }
+
+  async saveData (jsonFileName: string) {
+    await ensureDir(importsPath)
+    await writeJson(`${importsPath}/${jsonFileName}`, this.data)
   }
 
   private addInstruction (instruction: Omit<IImportInstruction, 'id'>) {
