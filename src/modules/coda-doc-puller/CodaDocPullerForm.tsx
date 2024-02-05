@@ -1,8 +1,7 @@
 import { useState, type HTMLAttributes } from 'react'
 import { useClient, CLIENT_LIST_DOCS, ITEM_STATUS_ERROR } from '../simple-mover/client'
 
-export interface ICodaDocPullerFormProps extends HTMLAttributes<HTMLFormElement> {
-}
+export interface ICodaDocPullerFormProps extends HTMLAttributes<HTMLFormElement> {}
 
 export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
   const [apiToken, setApiToken] = useState('')
@@ -10,7 +9,7 @@ export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
   const isDocListingError = itemStatuses?.[CLIENT_LIST_DOCS]?.status === ITEM_STATUS_ERROR
   const hasSelectedItems = selectedItemIds.length > 0
   const isFormDisabled = !isConnected || isListingDocs || hasSelectedItems
-  const isPullButtonDisabled = !apiToken || isFormDisabled
+  const isListButtonDisabled = !apiToken || isFormDisabled
 
   let message: string | undefined
 
@@ -49,9 +48,9 @@ export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
           <button
             type='button'
             className='btn btn-primary w-full hover:bg-indigo-600 cursor-pointer!'
-            disabled={isPullButtonDisabled}
+            disabled={isListButtonDisabled}
             onClick={() => apiToken && listDocs(apiToken)}
-          >Pull
+          >List
           </button>
         </div>
       </div>

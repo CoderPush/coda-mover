@@ -1,21 +1,21 @@
 'use client'
 
-import { useState } from 'react'
-import { STATUS_IMPORT_PROCESSING, STATUS_IMPORT_VALIDATING, useClient } from '../mover/client'
-import { OutlineForm } from './OutlineForm'
+// import { useState } from 'react'
+import { useClient } from '../simple-mover/client'
+// import { OutlineForm } from './OutlineForm'
 
 export function OutlineDocPusher () {
-  const { selectedItemIds, currentImportStatus, cancelImport } = useClient()
+  const { selectedItemIds } = useClient()
   const isBottomBoxShown = selectedItemIds.length > 0
-  const isSideFormLocked = currentImportStatus?.status === STATUS_IMPORT_PROCESSING ||
-    currentImportStatus?.status === STATUS_IMPORT_VALIDATING
-  const [isSideFormOpened, setIsSideFormOpened] = useState(false)
+  // const isSideFormLocked = currentImportStatus?.status === STATUS_IMPORT_PROCESSING ||
+  //   currentImportStatus?.status === STATUS_IMPORT_VALIDATING
+  // const [isSideFormOpened, setIsSideFormOpened] = useState(false)
 
-  const closeSideForm = () => {
-    if (isSideFormLocked) return
-    setIsSideFormOpened(false)
-    cancelImport()
-  }
+  // const closeSideForm = () => {
+  //   if (isSideFormLocked) return
+  //   setIsSideFormOpened(false)
+  //   cancelImport()
+  // }
 
   return (
     <div className='outline-doc-pusher mt-auto'>
@@ -34,7 +34,7 @@ export function OutlineDocPusher () {
           </label>
         </div>
       )}
-      <input
+      {/* <input
         type='checkbox'
         id='drawer-right'
         className='drawer-toggle'
@@ -46,7 +46,7 @@ export function OutlineDocPusher () {
         <div className='drawer-content flex flex-col h-full'>
           <OutlineForm isLocked={isSideFormLocked} isOpened={isSideFormOpened} closeForm={closeSideForm} />
         </div>
-      </div>
+      </div> */}
 
     </div>
   )

@@ -6,6 +6,7 @@ export const SERVER_IMPORT_CONFIRMING = 'confirming import'
 export const CLIEN_REJECT_IMPORT = 'reject import'
 export const CLIENT_CONFIRM_IMPORT = 'confirm import'
 export const SERVER_SAVE_ITEMS = 'save items'
+export const SERVER_LOAD_ITEMS = 'save items'
 
 export const CLIENT_IMPORT_OUTLINE = 'import to outline'
 

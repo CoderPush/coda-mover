@@ -1,7 +1,26 @@
-import { ensureDir, writeJson } from 'fs-extra'
-import type { ICodaApis, ICodaItem, IMover, IServer, IItemStatus, ICodaApiDoc, IStatus, ICodaApiPage } from './interfaces'
+import { ensureDir, pathExists, readJson, writeJson } from 'fs-extra'
+import type {
+  ICodaApis,
+  ICodaItem,
+  IMover,
+  IServer,
+  IItemStatus,
+  ICodaApiDoc,
+  IStatus,
+  ICodaApiPage,
+} from './interfaces'
 import { codaDocsPath, itemsJsonPath } from './lib'
-import { CLIENT_LIST_DOCS, ITEM_STATUS_DONE, ITEM_STATUS_ERROR, ITEM_STATUS_LISTING, ITEM_STATUS_PENDING, SERVER_RETURN_DOCS, SERVER_RETURN_STATUS, SERVER_SAVE_ITEMS } from './events'
+import {
+  CLIENT_LIST_DOCS,
+  ITEM_STATUS_DONE,
+  ITEM_STATUS_ERROR,
+  ITEM_STATUS_LISTING,
+  ITEM_STATUS_PENDING,
+  SERVER_LOAD_ITEMS,
+  SERVER_RETURN_DOCS,
+  SERVER_RETURN_STATUS,
+  SERVER_SAVE_ITEMS,
+} from './events'
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { isAxiosError } from 'axios'
 
@@ -31,15 +50,17 @@ export class Mover implements IMover {
     this.setStatus(CLIENT_LIST_DOCS, ITEM_STATUS_PENDING)
 
     this.tasks.add({
-      id: CLIENT_LIST_DOCS,
-      execute: async () => await this.queueListingDocs(),
-      priority: TaskPriority.INSTANT,
-    })
+      id: SERVER_LOAD_ITEMS,
+      execute: async () => {
+        await this.loadItems()
 
-    this.tasks.add({
-      id: SERVER_SAVE_ITEMS,
-      execute: async () => await this.saveItems(),
-      priority: TaskPriority.IDLE,
+        this.tasks.add({
+          id: CLIENT_LIST_DOCS,
+          execute: async () => await this.queueListingDocs(),
+          priority: TaskPriority.INSTANT,
+        })
+      },
+      priority: TaskPriority.INSTANT,
     })
 
     this.tasks.next()
@@ -59,6 +80,11 @@ export class Mover implements IMover {
       })
     } else {
       this.setStatus(CLIENT_LIST_DOCS, ITEM_STATUS_DONE)
+      this.tasks.add({
+        id: SERVER_SAVE_ITEMS,
+        execute: async () => await this.saveItems(),
+        priority: TaskPriority.IDLE,
+      })
     }
   }
 
@@ -106,6 +132,11 @@ export class Mover implements IMover {
       })
     } else {
       this.setStatus(docId, ITEM_STATUS_DONE)
+      this.tasks.add({
+        id: SERVER_SAVE_ITEMS,
+        execute: async () => await this.saveItems(),
+        priority: TaskPriority.IDLE,
+      })
     }
   }
 
@@ -130,13 +161,31 @@ export class Mover implements IMover {
 
   async saveItems () {
     await writeJson(itemsJsonPath, Object.values(this._items))
+    console.info('[mover] items saved')
+  }
+
+  async loadItems () {
+    if (!await pathExists(itemsJsonPath)) return
+
+    const items: ICodaItem[] = await readJson(itemsJsonPath)
+
+    items.forEach(item => {
+      this._items[item.id] = item
+    })
+
+    console.info('[mover] items loaded')
   }
 
   setStatus (id: string, status: IStatus, message?: string) {
     const itemStatus = { id, status, message }
 
     this._itemStatuses[id] = itemStatus
-    console.log(`[mover] ${id}`, status)
+    if (status === ITEM_STATUS_ERROR) {
+      console.error(`[mover] ${id}`, status, message)
+    } else {
+      console.info(`[mover] ${id}`, status)
+    }
+
     this.server.emit(SERVER_RETURN_STATUS, itemStatus)
   }
 

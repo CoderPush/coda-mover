@@ -23,7 +23,10 @@ export class MoverClient implements IClient {
   })
 
   listDocs (apiToken: string) {
-    this.setItemStatus({ id: CLIENT_LIST_DOCS, status: ITEM_STATUS_PENDING })
+    this.itemStatuses[CLIENT_LIST_DOCS] = {
+      id: CLIENT_LIST_DOCS,
+      status: ITEM_STATUS_PENDING,
+    }
     this.socket.emit(CLIENT_LIST_DOCS, apiToken)
   }
 
