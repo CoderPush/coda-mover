@@ -1,21 +1,17 @@
 import type { HTMLAttributes } from 'react'
 import { useClient, type ICodaItem } from '@/modules/simple-mover/client'
-import { CodaItemStatus } from './CodaItemStatus'
 
 export interface ICodaItemProps extends HTMLAttributes<HTMLLIElement> {
   data: ICodaItem
 }
 
 export function CodaItem ({ data }: ICodaItemProps) {
-  const { select, deselect, items, itemStatuses: statuses, selectedItemIds } = useClient()
+  const { select, deselect, items, selectedItemIds } = useClient()
   const innerPages = items.filter(item => item.treePath === `${data.treePath}${data.id}/`)
   const hasInnerPages = innerPages.length > 0
   const recursiveInnerPages = items.filter(item => item.treePath.startsWith(`${data.treePath}${data.id}/`))
   const recursiveInnerPageCount = recursiveInnerPages.length
   const isSelected = selectedItemIds.includes(data.id)
-  const itemStatus = statuses[data.id]
-  const message = itemStatus?.message
-  const status = itemStatus?.status
 
   return (
     <li key={data.id} data-id={data.id} className='flex items-center flex-wrap'>
@@ -30,7 +26,7 @@ export function CodaItem ({ data }: ICodaItemProps) {
         <span className='text-ellipsis whitespace-nowrap overflow-hidden grow'>
           {data.name}
         </span>
-        <CodaItemStatus status={status} message={message} />
+        {/* <CodaItemStatus status={status} message={message} /> */}
         {hasInnerPages && (
           <>
             <span className='tooltip tooltip-left' data-tooltip={`${recursiveInnerPageCount} pages`}>

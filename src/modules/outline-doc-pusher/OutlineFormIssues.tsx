@@ -6,6 +6,8 @@ export function OutlineFormIssues () {
   const isVisible = currentImportStatus?.status === ITEM_STATUS_VALIDATING ||
     currentImportStatus?.status === ITEM_STATUS_CONFIRMING
 
+  if (!isVisible) return null
+
   return (
     <div
       className={classNames(

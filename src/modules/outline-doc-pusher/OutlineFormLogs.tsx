@@ -6,6 +6,8 @@ export function OutlineFormLogs () {
   const isVisible = currentImportStatus?.status === ITEM_STATUS_IMPORTING ||
     currentImportStatus?.status === ITEM_STATUS_DONE
 
+  if (!isVisible) return null
+
   return (
     <div
       className={classNames(
