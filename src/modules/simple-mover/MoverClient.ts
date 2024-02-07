@@ -2,7 +2,16 @@ import { io } from 'socket.io-client'
 import {
   CLIENT_CONFIRM_IMPORT,
   CLIENT_IMPORT_OUTLINE,
-  CLIENT_LIST_DOCS, ITEM_STATUS_CANCELLED, ITEM_STATUS_CONFIRMING, ITEM_STATUS_DONE, ITEM_STATUS_ERROR, ITEM_STATUS_PENDING, ITEM_STATUS_SKIPPED, SERVER_RETURN_DOCS, SERVER_RETURN_STATUS,
+  CLIENT_LIST_DOCS,
+  ITEM_STATUS_CANCELLED,
+  ITEM_STATUS_CONFIRMING,
+  ITEM_STATUS_DONE,
+  ITEM_STATUS_ERROR,
+  ITEM_STATUS_PENDING,
+  ITEM_STATUS_SKIPPED,
+  SERVER_IMPORT_RETURN_ISSUES,
+  SERVER_RETURN_DOCS,
+  SERVER_RETURN_STATUS,
 } from './events'
 import type {
   ICodaDoc,
@@ -13,7 +22,6 @@ import type {
   IItemStatuses,
   IImportLog,
 } from './interfaces'
-import { SERVER_IMPORT_ISSUES } from '../mover/events'
 
 export class MoverClient implements IClient {
   private items: Record<string, ICodaItem> = {}
@@ -90,7 +98,7 @@ export class MoverClient implements IClient {
       this.handlers.onItems?.(Object.values(this.items))
     })
 
-    this.socket.on(SERVER_IMPORT_ISSUES, (issues: string[]) => {
+    this.socket.on(SERVER_IMPORT_RETURN_ISSUES, (issues: string[]) => {
       this.handlers.onImportIssues?.(issues)
     })
   }

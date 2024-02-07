@@ -3,7 +3,7 @@ import { isAxiosError } from 'axios'
 import type { ICodaApis, ICodaPage, IMover, IExporter, IStatus } from '../interfaces'
 import { createWriteStream, ensureDir } from 'fs-extra'
 import { getCurrentIsoDateTime, getParentDir, trimSlashes } from '../lib/helpers'
-import { download } from '../../mover/apis'
+import { download } from '../apis'
 import { ITEM_STATUS_DONE, ITEM_STATUS_DOWNLOADING, ITEM_STATUS_ERROR, ITEM_STATUS_EXPORTING, ITEM_STATUS_PENDING, SERVER_SAVE_ITEMS } from '../events'
 
 export class CodaExporter implements IExporter {

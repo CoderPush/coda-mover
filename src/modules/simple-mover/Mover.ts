@@ -25,11 +25,11 @@ import {
   SERVER_LOAD_ITEMS,
   SERVER_RETURN_DOCS,
   SERVER_RETURN_STATUS,
+  SERVER_IMPORT_RETURN_ISSUES,
 } from './events'
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { isAxiosError } from 'axios'
 import { CodaExporter } from './transfers/CodaExporter'
-import { SERVER_IMPORT_ISSUES } from '../mover/events'
 import { OutlineImporter } from './transfers/OutlineImporter'
 import { OutlineApis } from './apis/OutlineApis'
 
@@ -209,7 +209,7 @@ export class Mover implements IMover {
   }
 
   returnImportIssues (...issues: string[]) {
-    this.server.emit(SERVER_IMPORT_ISSUES, issues)
+    this.server.emit(SERVER_IMPORT_RETURN_ISSUES, issues)
   }
 
   async confirmImport () {
