@@ -1,5 +1,11 @@
 # coda-mover
 
+## 2.1.1
+
+### Patch Changes
+
+- Simplified UI with minize status updates and view updates
+
 ## 2.1.0
 
 ### Minor Changes
