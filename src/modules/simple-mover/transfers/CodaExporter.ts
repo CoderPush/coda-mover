@@ -8,10 +8,13 @@ import { ITEM_STATUS_DONE, ITEM_STATUS_DOWNLOADING, ITEM_STATUS_ERROR, ITEM_STAT
 
 export class CodaExporter implements IExporter {
   private readonly tasks = new TaskEmitter({
-    concurrency: 2,
+    concurrency: 1,
     onItemError: (item, error) => {
       const isRateLimitError = isAxiosError(error) && error.response?.status === 429
-      if (isRateLimitError) this.tasks.add({ ...item, priority: TaskPriority.LOW })
+      if (isRateLimitError) {
+        this.tasks.add({ ...item, priority: TaskPriority.LOW })
+        this.tasks.next()
+      }
 
       this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
     },

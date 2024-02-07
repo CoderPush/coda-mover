@@ -30,7 +30,6 @@ export interface ICodaPage {
 }
 
 export type ICodaItem = ICodaDoc | ICodaPage
-export type ICodaItems = ICodaItem[]
 
 export interface ICodaApis {
   listDocs: (pageToken?: string) => Promise<{
@@ -78,8 +77,12 @@ export interface IOutlineCollectionInput extends Omit<Partial<IOutlineCollection
   private?: boolean
 }
 
+export interface IOutlineDocumentCreateInput extends Partial<Omit<IOutlineDocument, 'id' | 'createdAt' | 'updatedAt' >> {
+  publish?: boolean
+}
+
 export interface IOutlineDocumentUpdateInput {
-  id: IOutlineDocument['id']
+  id: string
   title?: string
 }
 
@@ -99,6 +102,8 @@ export interface IOutlineApis {
   listCollections: (offset?: number) => Promise<IOutlineCollection[]>
   searchDocuments: (collectionId: string, query: string) => Promise<IOutlineDocument[]>
   createCollection: (collection: IOutlineCollectionInput) => Promise<IOutlineCollection>
+  createDocument: (document: IOutlineDocumentCreateInput) => Promise<IOutlineDocument>
+  getDocument: (documentId: string) => Promise<IOutlineDocument>
   archiveDocument: (documentId: string) => Promise<void>
   importDocumentByFile: (collectionId: string, filePath: string, parentDocumentId?: string) => Promise<IOutlineDocument>
   updateDocument: (document: IOutlineDocumentUpdateInput) => Promise<IOutlineDocument>

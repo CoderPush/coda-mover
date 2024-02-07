@@ -1,11 +1,11 @@
 import React, { type ReactNode, createContext, useContext, useState, useEffect } from 'react'
-import { type IItemStatus, type ICodaItem, type ICodaItems, type IClient, type IItemStatuses } from './interfaces'
+import type { IItemStatus, ICodaItem, IClient, IItemStatuses, IImportLog } from './interfaces'
 import { MoverClient } from './MoverClient'
 import { CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, ITEM_STATUS_DONE, ITEM_STATUS_ERROR } from './events'
 
 // Define the shape of the MoverClientContext value
 interface IMoverClientContextValue {
-  items: ICodaItems
+  items: ICodaItem[]
   selectedItemIds: string[]
   itemStatuses: Record<ICodaItem['id'], IItemStatus>
   isConnected: boolean
@@ -17,7 +17,9 @@ interface IMoverClientContextValue {
 
   currentImportStatus?: IItemStatus
   importIssues: string[]
+  importLogs: IImportLog[]
   importToOutline: IClient['importToOutline']
+  confirmImport: IClient['confirmImport']
   cancelImport: IClient['cancelImport']
 }
 
@@ -36,12 +38,13 @@ export const useClient = (): IMoverClientContextValue => {
 
 // Create the MoverClientProvider component
 export function MoverClientProvider ({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<ICodaItems>([])
+  const [items, setItems] = useState<ICodaItem[]>([])
   const [itemStatuses, setItemStatuses] = useState<IItemStatuses>({})
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [mover, setMover] = useState<MoverClient | null>(null)
   const [importIssues, setImportIssues] = useState<string[]>([])
+  const [importLogs, setImportLogs] = useState<IImportLog[]>([])
   const isListingDocs = itemStatuses[CLIENT_LIST_DOCS] && (
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_DONE &&
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_ERROR
@@ -59,6 +62,7 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
         onStatuses: itemStatuses => setItemStatuses(itemStatuses),
         onSelectionChange: selectedItemIds => setSelectedItemIds(selectedItemIds),
         onImportIssues: issues => setImportIssues(issues),
+        onImportLogs: logs => setImportLogs(logs),
       })
 
       client.handleServerResponses()
@@ -77,10 +81,12 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     isListingDocs,
     currentImportStatus,
     importIssues,
+    importLogs,
     listDocs: (codaApiToken: string) => mover?.listDocs(codaApiToken),
     select: (...itemIds) => mover?.select(...itemIds),
     deselect: (...itemIds) => mover?.deselect(...itemIds),
     importToOutline: (outlineApiToken: string) => mover?.importToOutline(outlineApiToken),
+    confirmImport: () => mover?.confirmImport(),
     cancelImport: () => mover?.cancelImport(),
   }
 

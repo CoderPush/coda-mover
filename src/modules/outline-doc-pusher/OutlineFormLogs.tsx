@@ -1,10 +1,10 @@
 import classNames from 'classnames'
-import { STATUS_IMPORT_DONE, STATUS_IMPORT_PROCESSING, useClient } from '../mover/client'
+import { ITEM_STATUS_DONE, ITEM_STATUS_IMPORTING, useClient } from '../simple-mover/client'
 
 export function OutlineFormLogs () {
   const { importLogs, currentImportStatus } = useClient()
-  const isVisible = currentImportStatus?.status === STATUS_IMPORT_PROCESSING ||
-    currentImportStatus?.status === STATUS_IMPORT_DONE
+  const isVisible = currentImportStatus?.status === ITEM_STATUS_IMPORTING ||
+    currentImportStatus?.status === ITEM_STATUS_DONE
 
   return (
     <div
@@ -14,7 +14,7 @@ export function OutlineFormLogs () {
       )}
     >
       {importLogs.map(log => (
-        <p key={log.message} className='leading-snug flex gap-1 text-xs'>
+        <p key={log.id} className='leading-snug flex gap-1 text-xs'>
           <span
             className={classNames(
               'w-4 h-4 text-center mr-1',

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ITEM_STATUS_DONE, ITEM_STATUS_ERROR, ITEM_STATUS_IMPORTING, useClient } from '../simple-mover/client'
 import { OutlineFormIssues } from './OutlineFormIssues'
-// import { OutlineFormLogs } from './OutlineFormLogs'
+import { OutlineFormLogs } from './OutlineFormLogs'
 import { OutlineFormStatus } from './OutlineFormStatus'
 import classNames from 'classnames'
 
@@ -14,7 +14,7 @@ export interface IOutlineFormProps {
 }
 
 export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProps) {
-  const { selectedItemIds, currentImportStatus, importToOutline } = useClient()
+  const { selectedItemIds, currentImportStatus, importToOutline, confirmImport } = useClient()
   const [apiToken, setApiToken] = useState('')
   const isProcessing = currentImportStatus?.status === ITEM_STATUS_IMPORTING
   const isDone = currentImportStatus?.status === ITEM_STATUS_DONE
@@ -71,7 +71,7 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
       </div>
       <OutlineFormStatus isMissingApiToken={!apiToken} />
       <OutlineFormIssues />
-      {/*  <OutlineFormLogs /> */}
+      <OutlineFormLogs />
       <div className='form-field'>
         <div className='form-control justify-between'>
           <button
@@ -81,7 +81,7 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
               isProcessing && 'btn-loading',
               isDone && 'hidden',
             )}
-            // onClick={confirmImport}
+            onClick={confirmImport}
             disabled={isConfirmButtonDisabled}
           >
             {isProcessing ? 'Working on it' : 'Go ahead'}

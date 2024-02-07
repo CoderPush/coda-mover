@@ -1,7 +1,8 @@
 import { io } from 'socket.io-client'
 import {
+  CLIENT_CONFIRM_IMPORT,
   CLIENT_IMPORT_OUTLINE,
-  CLIENT_LIST_DOCS, ITEM_STATUS_CANCELLED, ITEM_STATUS_PENDING, SERVER_RETURN_DOCS, SERVER_RETURN_STATUS,
+  CLIENT_LIST_DOCS, ITEM_STATUS_CANCELLED, ITEM_STATUS_CONFIRMING, ITEM_STATUS_DONE, ITEM_STATUS_ERROR, ITEM_STATUS_PENDING, ITEM_STATUS_SKIPPED, SERVER_RETURN_DOCS, SERVER_RETURN_STATUS,
 } from './events'
 import type {
   ICodaDoc,
@@ -10,6 +11,7 @@ import type {
   IClientHandlers,
   IItemStatus,
   IItemStatuses,
+  IImportLog,
 } from './interfaces'
 import { SERVER_IMPORT_ISSUES } from '../mover/events'
 
@@ -35,6 +37,7 @@ export class MoverClient implements IClient {
   importToOutline (outlineApiToken: string) {
     this.setItemStatus({ id: CLIENT_IMPORT_OUTLINE, status: ITEM_STATUS_PENDING })
     this.handlers.onImportIssues?.([])
+    this.clearImportProgress()
 
     this.socket.emit(
       CLIENT_IMPORT_OUTLINE,
@@ -43,8 +46,19 @@ export class MoverClient implements IClient {
     )
   }
 
+  confirmImport () {
+    if (this.itemStatuses[CLIENT_IMPORT_OUTLINE].status !== ITEM_STATUS_CONFIRMING) {
+      throw Error('Import is not in confirming state')
+    }
+
+    this.socket.emit(CLIENT_CONFIRM_IMPORT)
+  }
+
   cancelImport () {
     this.handlers.onImportIssues?.([])
+    this.handlers.onImportLogs?.([])
+    this.clearImportProgress()
+
     this.setItemStatus({ id: CLIENT_IMPORT_OUTLINE, status: ITEM_STATUS_CANCELLED })
   }
 
@@ -90,6 +104,10 @@ export class MoverClient implements IClient {
     }
 
     this.handlers.onStatuses?.(this.itemStatuses)
+
+    if (item.id.includes('import::')) {
+      this.reportImportProgress()
+    }
   }
 
   select (...itemIds: string[]) {
@@ -100,6 +118,38 @@ export class MoverClient implements IClient {
   deselect (...itemIds: string[]) {
     this.selectedItemIds = this.selectedItemIds.filter(id => !itemIds.includes(id))
     this.handlers.onSelectionChange?.([...this.selectedItemIds])
+  }
+
+  private reportImportProgress () {
+    const importLogs = Object.values(this.itemStatuses).map(item => {
+      const isImportLog = item.id.startsWith('import::')
+      const isTrackedStatus = item.status === ITEM_STATUS_ERROR ||
+        item.status === ITEM_STATUS_DONE ||
+        item.status === ITEM_STATUS_SKIPPED
+      const message = item.message
+
+      if (isImportLog && isTrackedStatus && message) {
+        return {
+          id: item.id,
+          level: item.status === ITEM_STATUS_ERROR ? 'error' : 'success',
+          message,
+        }
+      }
+
+      return null
+    }).filter(Boolean) as IImportLog[]
+
+    this.handlers.onImportLogs?.(importLogs)
+  }
+
+  private clearImportProgress () {
+    this.itemStatuses = Object.keys(this.itemStatuses).reduce<IItemStatuses>((importExcludingStatuses, id) => {
+      if (!id.startsWith('import::')) importExcludingStatuses[id] = this.itemStatuses[id]
+
+      return importExcludingStatuses
+    }, {})
+
+    this.reportImportProgress()
   }
 
   private selectUnqueuedItems (itemIds: string[]) {

@@ -1,6 +1,6 @@
 import type { Socket } from 'socket.io'
 import type { ICodaItem, IMover, IServer } from './interfaces'
-import { CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, SERVER_RETURN_STATUS } from './events'
+import { CLIENT_CONFIRM_IMPORT, CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, SERVER_RETURN_STATUS } from './events'
 import { Mover } from './Mover'
 import { CodaApis } from './apis'
 import { logError } from './lib'
@@ -59,7 +59,22 @@ export class MoverServer implements IServer {
       try {
         if (!this._mover) throw Error('Mover not initialized through \'handleClientListDocs\'')
 
-        this._mover.requestImportOutline(outlineApiToken, items)
+        void this._mover.requestImportOutline(outlineApiToken, items)
+      } catch (err: any) {
+        logError(err, CLIENT_IMPORT_OUTLINE)
+        this.socket.emit(SERVER_RETURN_STATUS, {
+          id: CLIENT_IMPORT_OUTLINE,
+          status: 'error',
+          message: err.message,
+        })
+      }
+    })
+
+    this.socket.on(CLIENT_CONFIRM_IMPORT, () => {
+      try {
+        if (!this._mover) throw Error('Mover not initialized through \'handleClientListDocs\'')
+
+        void this._mover.confirmImport()
       } catch (err: any) {
         logError(err, CLIENT_IMPORT_OUTLINE)
         this.socket.emit(SERVER_RETURN_STATUS, {

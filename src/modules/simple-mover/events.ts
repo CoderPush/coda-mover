@@ -22,6 +22,9 @@ export const ITEM_STATUS_ERROR = 'error'
 export const ITEM_STATUS_VALIDATING = 'validating'
 export const ITEM_STATUS_CONFIRMING = 'confirming'
 export const ITEM_STATUS_IMPORTING = 'importing'
+export const ITEM_STATUS_WAITING = 'waiting'
+export const ITEM_STATUS_SKIPPED = 'skipped'
+export const ITEM_STATUS_ARCHIVING = 'archiving'
 export const ITEM_STATUS_CANCELLED = 'cancelled'
 
 export const ItemStatuses = [
@@ -33,6 +36,9 @@ export const ItemStatuses = [
   ITEM_STATUS_ERROR,
   ITEM_STATUS_VALIDATING,
   ITEM_STATUS_IMPORTING,
+  ITEM_STATUS_WAITING,
+  ITEM_STATUS_SKIPPED,
+  ITEM_STATUS_ARCHIVING,
   ITEM_STATUS_CONFIRMING,
   ITEM_STATUS_CANCELLED,
 ] as const

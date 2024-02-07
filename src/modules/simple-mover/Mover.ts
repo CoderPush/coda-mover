@@ -14,6 +14,7 @@ import type {
 } from './interfaces'
 import { codaDocsPath, itemsJsonPath } from './lib'
 import {
+  CLIENT_IMPORT_OUTLINE,
   CLIENT_LIST_DOCS,
   ITEM_STATUS_DONE,
   ITEM_STATUS_ERROR,
@@ -38,7 +39,10 @@ export class Mover implements IMover {
     concurrency: 5,
     onItemError: (item, error) => {
       const isRateLimitError = isAxiosError(error) && error.response?.status === 429
-      if (isRateLimitError) this.tasks.add({ ...item, priority: TaskPriority.LOW })
+      if (isRateLimitError) {
+        this.tasks.add({ ...item, priority: TaskPriority.LOW })
+        this.tasks.next()
+      }
 
       this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
     },
@@ -54,6 +58,10 @@ export class Mover implements IMover {
 
   get items (): Record<string, ICodaItem> {
     return this._items
+  }
+
+  get itemStatuses (): Record<string, IItemStatus> {
+    return this._itemStatuses
   }
 
   get exporter (): IExporter {
@@ -184,6 +192,8 @@ export class Mover implements IMover {
         this.exporter.queuePageExport(page)
       } else if (!pathExistsSync(page.filePath)) {
         this.exporter.queuePageExport(page)
+      } else {
+        this.setStatus(page.id, ITEM_STATUS_DONE)
       }
     })
   }
@@ -209,6 +219,16 @@ export class Mover implements IMover {
 
   returnImportIssues (...issues: string[]) {
     this.server.emit(SERVER_IMPORT_ISSUES, issues)
+  }
+
+  async confirmImport () {
+    try {
+      if (!this._importer) throw Error('Import should be requested first')
+
+      await this._importer.confirmImport()
+    } catch (err: any) {
+      this.setStatus(CLIENT_IMPORT_OUTLINE, ITEM_STATUS_ERROR, err.message as string)
+    }
   }
 
   cancelImports () {
@@ -242,6 +262,8 @@ export class Mover implements IMover {
     this._itemStatuses[id] = itemStatus
     if (status === ITEM_STATUS_ERROR) {
       console.error(`[mover] ${id}`, status, message)
+    } else if (message) {
+      console.info(`[mover] ${id}`, status, message)
     } else {
       console.info(`[mover] ${id}`, status)
     }
