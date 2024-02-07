@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react'
-import { useClient, type ICodaItem } from '../simple-mover/client'
+import { useClient, type ICodaItem } from '@/modules/simple-mover/client'
 import { CodaItemStatus } from './CodaItemStatus'
 
 export interface ICodaItemProps extends HTMLAttributes<HTMLLIElement> {

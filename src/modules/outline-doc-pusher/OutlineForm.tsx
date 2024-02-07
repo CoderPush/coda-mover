@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { ITEM_STATUS_DONE, ITEM_STATUS_ERROR, ITEM_STATUS_IMPORTING, useClient } from '../simple-mover/client'
+import { useEffect } from 'react'
+import { ITEM_STATUS_DONE, ITEM_STATUS_ERROR, ITEM_STATUS_IMPORTING, useClient } from '@/modules/simple-mover/client'
 import { OutlineFormIssues } from './OutlineFormIssues'
 import { OutlineFormLogs } from './OutlineFormLogs'
 import { OutlineFormStatus } from './OutlineFormStatus'
 import classNames from 'classnames'
+import { useLocalTokens } from '@/modules/local-tokens'
 
 export interface IOutlineFormProps {
   isLocked?: boolean
@@ -15,7 +16,7 @@ export interface IOutlineFormProps {
 
 export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProps) {
   const { selectedItemIds, currentImportStatus, importToOutline, confirmImport } = useClient()
-  const [apiToken, setApiToken] = useState('')
+  const { outlineApiToken: apiToken, setApiTokenFor } = useLocalTokens()
   const isProcessing = currentImportStatus?.status === ITEM_STATUS_IMPORTING
   const isDone = currentImportStatus?.status === ITEM_STATUS_DONE
   const isError = currentImportStatus?.status === ITEM_STATUS_ERROR
@@ -30,12 +31,6 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
     apiToken && importToOutline(apiToken)
   }, [apiToken]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!isOpened) {
-      setApiToken('')
-    }
-  }, [isOpened])
-
   return (
     <form className='outline-form flex flex-col max-h-full gap-2'>
       <h3>Confirm Outline Import</h3>
@@ -48,7 +43,7 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
             type='password'
             className='input max-w-full focus:ring-1 ring-indigo-500'
             value={apiToken}
-            onChange={ev => setApiToken(ev.target.value)}
+            onChange={ev => setApiTokenFor('outline', ev.target.value)}
             disabled={isLocked || isDone}
           />
         </div>

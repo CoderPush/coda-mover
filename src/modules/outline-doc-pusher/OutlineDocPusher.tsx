@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ITEM_STATUS_IMPORTING, ITEM_STATUS_VALIDATING, useClient } from '../simple-mover/client'
+import { ITEM_STATUS_IMPORTING, ITEM_STATUS_VALIDATING, useClient } from '@/modules/simple-mover/client'
 import { OutlineForm } from './OutlineForm'
 
 export function OutlineDocPusher () {
@@ -44,7 +44,9 @@ export function OutlineDocPusher () {
       <div className='overlay' onClick={closeSideForm} />
       <div className='drawer drawer-right'>
         <div className='drawer-content flex flex-col h-full'>
-          <OutlineForm isLocked={isSideFormLocked} isOpened={isSideFormOpened} closeForm={closeSideForm} />
+          {isSideFormOpened && (
+            <OutlineForm isLocked={isSideFormLocked} isOpened={isSideFormOpened} closeForm={closeSideForm} />
+          )}
         </div>
       </div>
     </div>

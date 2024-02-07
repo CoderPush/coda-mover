@@ -1,10 +1,11 @@
-import { useState, type HTMLAttributes } from 'react'
-import { useClient, CLIENT_LIST_DOCS, ITEM_STATUS_ERROR } from '../simple-mover/client'
+import { type HTMLAttributes } from 'react'
+import { useClient, CLIENT_LIST_DOCS, ITEM_STATUS_ERROR } from '@/modules/simple-mover/client'
+import { useLocalTokens } from '@/modules/local-tokens'
 
 export interface ICodaDocPullerFormProps extends HTMLAttributes<HTMLFormElement> {}
 
 export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
-  const [apiToken, setApiToken] = useState('')
+  const { codaApiToken: apiToken, setApiTokenFor } = useLocalTokens()
   const { isConnected, itemStatuses, isListingDocs, listDocs, selectedItemIds } = useClient()
   const isDocListingError = itemStatuses?.[CLIENT_LIST_DOCS]?.status === ITEM_STATUS_ERROR
   const hasSelectedItems = selectedItemIds.length > 0
@@ -38,7 +39,7 @@ export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
             type='password'
             className='input max-w-full focus:ring-1 ring-indigo-500'
             value={apiToken}
-            onChange={ev => setApiToken(ev.target.value)}
+            onChange={ev => setApiTokenFor('coda', ev.target.value)}
             disabled={isFormDisabled}
           />
         </div>
