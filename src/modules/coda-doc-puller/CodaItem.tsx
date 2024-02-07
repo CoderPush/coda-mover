@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react'
-import { useClient, type ICodaItem } from '../mover/client'
+import { useClient, type ICodaItem } from '../simple-mover/client'
 import { CodaItemStatus } from './CodaItemStatus'
 
 export interface ICodaItemProps extends HTMLAttributes<HTMLLIElement> {
@@ -14,29 +14,22 @@ export function CodaItem ({ data }: ICodaItemProps) {
   const recursiveInnerPageCount = recursiveInnerPages.length
   const isSelected = selectedItemIds.includes(data.id)
   const itemStatus = statuses[data.id]
-  const innerPageStatuses = recursiveInnerPages.map(page => statuses[page.id]?.status).flat()
   const message = itemStatus?.message
-  let status = itemStatus?.status
-
-  if (!status || status === 'done') {
-    if (innerPageStatuses.includes('error')) {
-      status = 'error in pages'
-    } else if (innerPageStatuses.includes('saving')) {
-      status = 'saving pages'
-    }
-  }
+  const status = itemStatus?.status
 
   return (
     <li key={data.id} data-id={data.id} className='flex items-center flex-wrap'>
       {hasInnerPages && <input type='checkbox' id={`toggle--${data.id}`} className='menu-toggle [&:defaultChecked~.flex>.menu-icon]:-rotate-90' />}
-      <input
-        type='checkbox'
-        className='checkbox'
-        checked={isSelected}
-        onChange={() => isSelected ? deselect(data.id) : select(data.id)}
-      />
-      <label className='menu-item menu-item-no-animation basis-4/5 md:basis-11/12 overflow-hidden justify-between grow px-3 ml-2' htmlFor={`toggle--${data.id}`}>
-        <span className='text-ellipsis whitespace-nowrap overflow-hidden grow'>{data.name}</span>
+      <label className='menu-item menu-item-no-animation basis-4/5 md:basis-11/12 overflow-hidden justify-between grow px-2'>
+        <input
+          type='checkbox'
+          className='checkbox mr-2'
+          checked={isSelected}
+          onChange={() => isSelected ? deselect(data.id) : select(data.id)}
+        />
+        <span className='text-ellipsis whitespace-nowrap overflow-hidden grow'>
+          {data.name}
+        </span>
         <CodaItemStatus status={status} message={message} />
         {hasInnerPages && (
           <>

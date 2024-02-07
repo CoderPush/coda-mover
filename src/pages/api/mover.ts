@@ -1,7 +1,7 @@
 // Until Next exposes http server instance from its endpoints or config
 // Temporarily use `pages` folder to access Next server instance to combine with socket.io
 
-import { MoverServer } from '@/modules/mover/server'
+import { MoverServer } from '@/modules/simple-mover/server'
 import { type Server as HttpServer } from 'http'
 import { type NextApiResponse } from 'next'
 import { Server } from 'socket.io'

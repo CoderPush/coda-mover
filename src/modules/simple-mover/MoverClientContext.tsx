@@ -1,27 +1,26 @@
 import React, { type ReactNode, createContext, useContext, useState, useEffect } from 'react'
-import { type IItemStatus, type ICodaItem, type ICodaItems, type IMoverClient, type IImportLog } from './interfaces'
+import type { IItemStatus, ICodaItem, IClient, IItemStatuses, IImportLog } from './interfaces'
 import { MoverClient } from './MoverClient'
-import { CLIENT_SYNC_DOCS } from './events'
+import { CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, ITEM_STATUS_DONE, ITEM_STATUS_ERROR } from './events'
 
 // Define the shape of the MoverClientContext value
 interface IMoverClientContextValue {
-  items: ICodaItems
+  items: ICodaItem[]
   selectedItemIds: string[]
   itemStatuses: Record<ICodaItem['id'], IItemStatus>
   isConnected: boolean
-  isSyncingDocs: boolean
-  syncDocs: IMoverClient['syncDocs']
+  isListingDocs: boolean
+  listDocs: IClient['listDocs']
 
-  select: IMoverClient['select']
-  deselect: IMoverClient['deselect']
+  select: IClient['select']
+  deselect: IClient['deselect']
 
-  importId: string
+  currentImportStatus?: IItemStatus
   importIssues: string[]
   importLogs: IImportLog[]
-  currentImportStatus?: IItemStatus
-  importToOutline: (apiToken: string) => void
-  confirmImport: () => void
-  cancelImport: () => void
+  importToOutline: IClient['importToOutline']
+  confirmImport: IClient['confirmImport']
+  cancelImport: IClient['cancelImport']
 }
 
 // Create the MoverClientContext
@@ -39,16 +38,18 @@ export const useClient = (): IMoverClientContextValue => {
 
 // Create the MoverClientProvider component
 export function MoverClientProvider ({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<ICodaItems>([])
-  const [itemStatuses, setItemStatuses] = useState<Record<ICodaItem['id'], IItemStatus>>({})
+  const [items, setItems] = useState<ICodaItem[]>([])
+  const [itemStatuses, setItemStatuses] = useState<IItemStatuses>({})
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
   const [isConnected, setIsConnected] = useState(false)
-  const [importId, setImportId] = useState<string>('')
+  const [mover, setMover] = useState<MoverClient | null>(null)
   const [importIssues, setImportIssues] = useState<string[]>([])
   const [importLogs, setImportLogs] = useState<IImportLog[]>([])
-  const [mover, setMover] = useState<MoverClient | null>(null)
-  const isSyncingDocs = itemStatuses[CLIENT_SYNC_DOCS]?.status === 'listing'
-  const currentImportStatus = itemStatuses[`import:${importId}`]
+  const isListingDocs = itemStatuses[CLIENT_LIST_DOCS] && (
+    itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_DONE &&
+    itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_ERROR
+  )
+  const currentImportStatus = itemStatuses[CLIENT_IMPORT_OUTLINE]
 
   useEffect(() => {
     if (mover) return
@@ -77,40 +78,16 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     selectedItemIds,
     itemStatuses,
     isConnected,
-    isSyncingDocs,
-    importId,
+    isListingDocs,
+    currentImportStatus,
     importIssues,
     importLogs,
-    currentImportStatus,
-    syncDocs: (apiToken: string) => mover?.syncDocs(apiToken),
+    listDocs: (codaApiToken: string) => mover?.listDocs(codaApiToken),
     select: (...itemIds) => mover?.select(...itemIds),
     deselect: (...itemIds) => mover?.deselect(...itemIds),
-    importToOutline: (apiToken: string) => {
-      const importId = Date.now().toString()
-
-      setImportId(importId)
-      mover?.importToOutline(importId, apiToken)
-    },
-    confirmImport: () => {
-      if (!importId) throw Error('Import should be requested with importToOutline')
-      if (currentImportStatus?.status !== 'confirming') {
-        setItemStatuses(itemStatuses => ({
-          ...itemStatuses,
-          [importId]: {
-            id: `import:${importId}`,
-            status: 'error',
-            message: 'Import is not in confirming state',
-          },
-        }))
-      }
-
-      mover?.confirmImport(importId)
-    },
-    cancelImport: () => {
-      setImportId('')
-      setImportIssues([])
-      setImportLogs([])
-    },
+    importToOutline: (outlineApiToken: string) => mover?.importToOutline(outlineApiToken),
+    confirmImport: () => mover?.confirmImport(),
+    cancelImport: () => mover?.cancelImport(),
   }
 
   return (

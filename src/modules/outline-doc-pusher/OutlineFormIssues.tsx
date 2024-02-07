@@ -1,10 +1,10 @@
 import classNames from 'classnames'
-import { STATUS_IMPORT_CONFIRMING, STATUS_IMPORT_VALIDATING, useClient } from '../mover/client'
+import { ITEM_STATUS_CONFIRMING, ITEM_STATUS_VALIDATING, useClient } from '../simple-mover/client'
 
 export function OutlineFormIssues () {
   const { importIssues, currentImportStatus } = useClient()
-  const isVisible = currentImportStatus?.status === STATUS_IMPORT_VALIDATING ||
-    currentImportStatus?.status === STATUS_IMPORT_CONFIRMING
+  const isVisible = currentImportStatus?.status === ITEM_STATUS_VALIDATING ||
+    currentImportStatus?.status === ITEM_STATUS_CONFIRMING
 
   return (
     <div

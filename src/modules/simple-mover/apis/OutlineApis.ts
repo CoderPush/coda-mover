@@ -6,6 +6,7 @@ import type {
   IOutlineApis,
   IOutlineSearchDocumentResult,
   IOutlineDocumentUpdateInput,
+  IOutlineDocumentCreateInput,
 } from './interfaces'
 import { createReadStream, pathExists } from 'fs-extra'
 import FormData from 'form-data'
@@ -47,8 +48,21 @@ export class OutlineApis implements IOutlineApis {
 
     const { data } = await this.apis.post('/collections.create', {
       private: true,
+      icon: 'truck',
       ...collection,
     })
+
+    return data.data
+  }
+
+  async createDocument (document: IOutlineDocumentCreateInput) {
+    const { data } = await this.apis.post('/documents.create', document)
+
+    return data.data
+  }
+
+  async getDocument (documentId: string) {
+    const { data } = await this.apis.post('/documents.info', { id: documentId })
 
     return data.data
   }
@@ -74,6 +88,12 @@ export class OutlineApis implements IOutlineApis {
 
   async updateDocument (document: IOutlineDocumentUpdateInput) {
     const { data } = await this.apis.post('/documents.update', document)
+
+    return data.data
+  }
+
+  async getCollectionTree (collectionId: string) {
+    const { data } = await this.apis.post('/collections.documents', { id: collectionId })
 
     return data.data
   }

@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@abxvn/tasks':
-    specifier: ^1.1.3
-    version: 1.1.3
+    specifier: ^1.2.0
+    version: 1.2.0
   axios:
     specifier: ^1.6.5
     version: 1.6.5
@@ -108,8 +108,8 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: true
 
-  /@abxvn/tasks@1.1.3:
-    resolution: {integrity: sha512-LMtZVW/TfEdmYw8dnftOObqXqQgv2ZPBRowmOvnV17qzNXjBv4ET4qBLmT4gkfPghn2rAGqP7PTBTua4NYnVyA==}
+  /@abxvn/tasks@1.2.0:
+    resolution: {integrity: sha512-tRMvD3Z0Opq3Kpfjf9byL080tzgPoRmrlA6PMXFhBo4kwDunIkqHQ6qBhxdGCujI8qOSAiAbKTRyCt929Crm9A==}
     dev: false
 
   /@alloc/quick-lru@5.2.0:
@@ -681,7 +681,7 @@ packages:
       debug: 4.3.4
       eslint: 8.56.0
       graphemer: 1.4.0
-      ignore: 5.3.0
+      ignore: 5.3.1
       natural-compare: 1.4.0
       semver: 7.5.4
       ts-api-utils: 1.0.3(typescript@5.3.3)
@@ -2559,6 +2559,11 @@ packages:
 
   /ignore@5.3.0:
     resolution: {integrity: sha512-g7dmpshy+gD7mh88OC9NwSGTKoc3kyLAZQRU1mt53Aw/vnvfXnbC+F/7F7QoYVKbV+KNvJx8wArewKy1vXMtlg==}
+    engines: {node: '>= 4'}
+    dev: true
+
+  /ignore@5.3.1:
+    resolution: {integrity: sha512-5Fytz/IraMjqpwfd34ke28PTVMjZjJG2MPn5t7OE4eUCUNf8BAa7b5WUS9/Qvr6mwOQS7Mk6vdsMno5he+T8Xw==}
     engines: {node: '>= 4'}
     dev: true
 

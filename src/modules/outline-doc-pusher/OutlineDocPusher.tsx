@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { STATUS_IMPORT_PROCESSING, STATUS_IMPORT_VALIDATING, useClient } from '../mover/client'
+import { ITEM_STATUS_IMPORTING, ITEM_STATUS_VALIDATING, useClient } from '../simple-mover/client'
 import { OutlineForm } from './OutlineForm'
 
 export function OutlineDocPusher () {
   const { selectedItemIds, currentImportStatus, cancelImport } = useClient()
   const isBottomBoxShown = selectedItemIds.length > 0
-  const isSideFormLocked = currentImportStatus?.status === STATUS_IMPORT_PROCESSING ||
-    currentImportStatus?.status === STATUS_IMPORT_VALIDATING
+  const isSideFormLocked = currentImportStatus?.status === ITEM_STATUS_VALIDATING ||
+    currentImportStatus?.status === ITEM_STATUS_IMPORTING
   const [isSideFormOpened, setIsSideFormOpened] = useState(false)
 
   const closeSideForm = () => {
@@ -47,7 +47,6 @@ export function OutlineDocPusher () {
           <OutlineForm isLocked={isSideFormLocked} isOpened={isSideFormOpened} closeForm={closeSideForm} />
         </div>
       </div>
-
     </div>
   )
 }

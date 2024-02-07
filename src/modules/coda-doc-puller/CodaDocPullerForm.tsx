@@ -1,17 +1,15 @@
 import { useState, type HTMLAttributes } from 'react'
-import { useClient } from '../mover/MoverClientContext'
-import { CLIENT_SYNC_DOCS } from '../mover/events'
+import { useClient, CLIENT_LIST_DOCS, ITEM_STATUS_ERROR } from '../simple-mover/client'
 
-export interface ICodaDocPullerFormProps extends HTMLAttributes<HTMLFormElement> {
-}
+export interface ICodaDocPullerFormProps extends HTMLAttributes<HTMLFormElement> {}
 
 export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
   const [apiToken, setApiToken] = useState('')
-  const { isConnected, itemStatuses, isSyncingDocs, syncDocs, selectedItemIds } = useClient()
-  const isDocListingError = itemStatuses?.[CLIENT_SYNC_DOCS]?.status === 'error'
+  const { isConnected, itemStatuses, isListingDocs, listDocs, selectedItemIds } = useClient()
+  const isDocListingError = itemStatuses?.[CLIENT_LIST_DOCS]?.status === ITEM_STATUS_ERROR
   const hasSelectedItems = selectedItemIds.length > 0
-  const isFormDisabled = !isConnected || isSyncingDocs || hasSelectedItems
-  const isPullButtonDisabled = !apiToken || isFormDisabled
+  const isFormDisabled = !isConnected || isListingDocs || hasSelectedItems
+  const isListButtonDisabled = !apiToken || isFormDisabled
 
   let message: string | undefined
 
@@ -20,11 +18,17 @@ export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
   } else if (!isConnected) {
     message = 'Please wait for connection'
   } else if (isDocListingError) {
-    message = itemStatuses[CLIENT_SYNC_DOCS].message
+    message = itemStatuses[CLIENT_LIST_DOCS].message
   }
 
   return (
-    <form className={`flex items-end flex-wrap gap-3 ${className}`}>
+    <form
+      className={`flex items-end flex-wrap gap-3 ${className}`}
+      onSubmit={ev => {
+        ev.preventDefault()
+        !isFormDisabled && apiToken && listDocs(apiToken)
+      }}
+    >
       <div className='form-field'>
         <label className='form-label'>Coda API Token</label>
         <div className='form-control relative w-full'>
@@ -44,9 +48,9 @@ export function CodaDocPullerForm ({ className }: ICodaDocPullerFormProps) {
           <button
             type='button'
             className='btn btn-primary w-full hover:bg-indigo-600 cursor-pointer!'
-            disabled={isPullButtonDisabled}
-            onClick={() => apiToken && syncDocs(apiToken)}
-          >Pull
+            disabled={isListButtonDisabled}
+            onClick={() => apiToken && listDocs(apiToken)}
+          >List
           </button>
         </div>
       </div>
