@@ -1,5 +1,6 @@
 import { io } from 'socket.io-client'
 import {
+  CLIENT_IMPORT_OUTLINE,
   CLIENT_LIST_DOCS, ITEM_STATUS_PENDING, SERVER_RETURN_DOCS, SERVER_RETURN_STATUS,
 } from './events'
 import type {
@@ -22,12 +23,21 @@ export class MoverClient implements IClient {
     path: '/api/mover/io',
   })
 
-  listDocs (apiToken: string) {
+  listDocs (codaApiToken: string) {
     this.itemStatuses[CLIENT_LIST_DOCS] = {
       id: CLIENT_LIST_DOCS,
       status: ITEM_STATUS_PENDING,
     }
-    this.socket.emit(CLIENT_LIST_DOCS, apiToken)
+    this.socket.emit(CLIENT_LIST_DOCS, codaApiToken)
+  }
+
+  importToOutline (outlineApiToken: string) {
+    this.setItemStatus({ id: CLIENT_IMPORT_OUTLINE, status: ITEM_STATUS_PENDING })
+    this.socket.emit(
+      CLIENT_IMPORT_OUTLINE,
+      outlineApiToken,
+      this.selectedItemIds.map(id => this.items[id]).filter(Boolean),
+    )
   }
 
   handleServerResponses () {

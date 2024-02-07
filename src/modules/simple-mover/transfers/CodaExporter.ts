@@ -4,19 +4,26 @@ import type { ICodaApis, ICodaPage, IMover, IExporter, IStatus } from '../interf
 import { createWriteStream, ensureDir } from 'fs-extra'
 import { getCurrentIsoDateTime, getParentDir, logError, trimSlashes } from '../lib/helpers'
 import { download } from '../../mover/apis'
+import { ITEM_STATUS_DONE, ITEM_STATUS_DOWNLOADING, ITEM_STATUS_ERROR, ITEM_STATUS_EXPORTING, ITEM_STATUS_PENDING, SERVER_SAVE_ITEMS } from '../events'
 
 export class CodaExporter implements IExporter {
   private readonly tasks = new TaskEmitter({
-    concurrency: 1,
+    concurrency: 2,
     onItemError: (item, error) => {
       const isRateLimitError = isAxiosError(error) && error.response?.status === 429
       if (isRateLimitError) this.tasks.add({ ...item, priority: TaskPriority.LOW })
 
+      this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
       logError(error, item.id)
-      this.setStatus(item.id!, 'error', error.message)
     },
-    onItemDone: item => {
-      this.setStatus(item.id!, 'done')
+    onItemDone: (item) => {
+      if (this.tasks.pendingCount === 0 && item.id !== SERVER_SAVE_ITEMS) {
+        this.tasks.add({
+          id: SERVER_SAVE_ITEMS,
+          execute: async () => await this.mover.saveItems(),
+          priority: TaskPriority.HIGH,
+        })
+      }
     },
   })
 
@@ -26,24 +33,28 @@ export class CodaExporter implements IExporter {
   ) {}
 
   queuePageExport (page: ICodaPage) {
+    this.setStatus(page.id, ITEM_STATUS_PENDING)
+
+    this.tasks.start()
     this.tasks.add({ id: page.id, execute: async () => await this.exportPage(page) })
+    this.tasks.next()
   }
 
   async exportPage (page: ICodaPage, exportId?: string) {
-    const docId = trimSlashes(page.treePath).split('/').pop()
-    if (!docId) throw Error(`[${page.id}] export doc id not found`)
+    const docId = trimSlashes(page.treePath).split('/').shift()
+    if (!docId) throw Error('invalid page tree path')
 
     const parentDir = getParentDir(page, this.items)
     const pageFilePath = `${parentDir}/${page.name.replace(/\//g, ' ')}.html`
 
     if (!exportId) {
-      this.setStatus(page.id, 'exporting')
+      this.setStatus(page.id, ITEM_STATUS_EXPORTING)
       const exportRes = await this.apis.exportPage(docId, page.id)
 
       exportId = exportRes.id
     }
 
-    if (!exportId) throw Error(`[${page.id}] export id is required`)
+    if (!exportId) throw Error('export isn\'t requested')
 
     const pageExport = await this.apis.getPageExport(docId, page.id, exportId)
 
@@ -57,7 +68,7 @@ export class CodaExporter implements IExporter {
       return
     }
 
-    this.setStatus(page.id, 'downloading')
+    this.setStatus(page.id, ITEM_STATUS_DOWNLOADING)
     this.items[page.id].syncedAt = getCurrentIsoDateTime()
 
     await ensureDir(parentDir)
@@ -68,7 +79,7 @@ export class CodaExporter implements IExporter {
 
     const syncedPage = { ...page, filePath: pageFilePath }
 
-    this.setStatus(page.id, 'done')
+    this.setStatus(page.id, ITEM_STATUS_DONE)
     this.items[page.id] = syncedPage
   }
 
@@ -77,7 +88,7 @@ export class CodaExporter implements IExporter {
   }
 
   private setStatus (id: string, status: IStatus, message?: string) {
-    this.mover.setStatus(`export:${id}`, status, message)
+    this.mover.setStatus(id, status, message)
   }
 
   get items () {

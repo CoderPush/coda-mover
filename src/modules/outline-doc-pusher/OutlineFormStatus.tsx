@@ -1,20 +1,21 @@
 import {
-  STATUS_IMPORT_CONFIRMING,
-  STATUS_IMPORT_DONE,
-  STATUS_IMPORT_ERROR,
-  STATUS_IMPORT_VALIDATING,
+  ITEM_STATUS_CONFIRMING,
+  ITEM_STATUS_DONE,
+  ITEM_STATUS_ERROR,
+  ITEM_STATUS_VALIDATING,
   useClient,
-} from '../mover/client'
+} from '../simple-mover/client'
 
 export function OutlineFormStatus ({ isMissingApiToken }: { isMissingApiToken: boolean }) {
-  const { currentImportStatus, importIssues } = useClient()
-  const isError = currentImportStatus?.status === STATUS_IMPORT_ERROR
-  const isValidating = currentImportStatus?.status === STATUS_IMPORT_VALIDATING
-  const isValidatedWithoutIssues = currentImportStatus?.status === STATUS_IMPORT_CONFIRMING &&
+  const { currentImportStatus } = useClient()
+  const isError = currentImportStatus?.status === ITEM_STATUS_ERROR
+  const isValidating = currentImportStatus?.status === ITEM_STATUS_VALIDATING
+  const importIssues = []
+  const isValidatedWithoutIssues = currentImportStatus?.status === ITEM_STATUS_CONFIRMING &&
     importIssues.length === 0
-  const isValidatedWithIssues = currentImportStatus?.status === STATUS_IMPORT_CONFIRMING &&
+  const isValidatedWithIssues = currentImportStatus?.status === ITEM_STATUS_CONFIRMING &&
     importIssues.length > 0
-  const isDone = currentImportStatus?.status === STATUS_IMPORT_DONE
+  const isDone = currentImportStatus?.status === ITEM_STATUS_DONE
 
   return (
     <div className='text-sm outline-form__status'>

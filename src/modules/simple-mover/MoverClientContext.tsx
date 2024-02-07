@@ -1,7 +1,7 @@
 import React, { type ReactNode, createContext, useContext, useState, useEffect } from 'react'
 import { type IItemStatus, type ICodaItem, type ICodaItems, type IClient, type IItemStatuses } from './interfaces'
 import { MoverClient } from './MoverClient'
-import { CLIENT_LIST_DOCS, ITEM_STATUS_DONE, ITEM_STATUS_ERROR } from './events'
+import { CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, ITEM_STATUS_DONE, ITEM_STATUS_ERROR } from './events'
 
 // Define the shape of the MoverClientContext value
 interface IMoverClientContextValue {
@@ -14,6 +14,9 @@ interface IMoverClientContextValue {
 
   select: IClient['select']
   deselect: IClient['deselect']
+
+  currentImportStatus?: IItemStatus
+  importToOutline: IClient['importToOutline']
 }
 
 // Create the MoverClientContext
@@ -40,6 +43,7 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_DONE &&
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_ERROR
   )
+  const currentImportStatus = itemStatuses[CLIENT_IMPORT_OUTLINE]
 
   useEffect(() => {
     if (mover) return
@@ -67,9 +71,11 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     itemStatuses,
     isConnected,
     isListingDocs,
-    listDocs: (apiToken: string) => mover?.listDocs(apiToken),
+    currentImportStatus,
+    listDocs: (codaApiToken: string) => mover?.listDocs(codaApiToken),
     select: (...itemIds) => mover?.select(...itemIds),
     deselect: (...itemIds) => mover?.deselect(...itemIds),
+    importToOutline: (outlineApiToken: string) => mover?.importToOutline(outlineApiToken),
   }
 
   return (

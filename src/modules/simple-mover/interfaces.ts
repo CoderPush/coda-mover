@@ -1,9 +1,9 @@
 import type { ICodaItem, ICodaPage } from './apis/interfaces'
-import type { ITEM_STATUSES } from './events'
+import type { ItemStatuses } from './events'
 
 export * from './apis/interfaces'
 
-export type IStatus = typeof ITEM_STATUSES[number]
+export type IStatus = typeof ItemStatuses[number]
 
 export interface IExporter {
   queuePageExport: (page: ICodaPage) => void
@@ -17,10 +17,14 @@ export interface IMover {
   listDocs: () => void
   listPages: (docId: string) => void
 
+  requestImportOutline: (outlineApiToken: string, items: ICodaItem[]) => void
+  cancelImports: () => void
+
   setStatus: (id: string, status: IStatus, message?: string) => void
   getStatus: (id: string) => string
 
   saveItems: () => Promise<void>
+  dispose: () => void
 }
 
 export interface IItemStatus {
@@ -33,14 +37,17 @@ export interface IServer {
   emit: (event: string, data: any) => void
 
   handleClientListDocs: () => void
+  handleClientImportOutline: () => void
 }
 
 export interface IClient {
-  listDocs: (apiToken: string) => void
+  listDocs: (codaApiToken: string) => void
 
   handleServerResponses: () => void
   select: (...itemIds: string[]) => void
   deselect: (...itemIds: string[]) => void
+
+  importToOutline: (outlineApiToken: string) => void
 }
 
 export type IItemStatuses = Record<string, IItemStatus>

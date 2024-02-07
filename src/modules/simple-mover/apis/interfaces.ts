@@ -15,6 +15,7 @@ export interface ICodaDoc {
 export interface ICodaApiPage {
   id: string
   name: string
+  createdAt: string // ISO string
   updatedAt: string // ISO string
   parent?: { id: string }
   contentType: string

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { STATUS_IMPORT_DONE, STATUS_IMPORT_ERROR, STATUS_IMPORT_PROCESSING, useClient } from '../mover/client'
-import { OutlineFormIssues } from './OutlineFormIssues'
-import { OutlineFormLogs } from './OutlineFormLogs'
+import { ITEM_STATUS_DONE, ITEM_STATUS_ERROR, ITEM_STATUS_IMPORTING, useClient } from '../simple-mover/client'
+// import { OutlineFormIssues } from './OutlineFormIssues'
+// import { OutlineFormLogs } from './OutlineFormLogs'
 import { OutlineFormStatus } from './OutlineFormStatus'
 import classNames from 'classnames'
 
@@ -14,11 +14,11 @@ export interface IOutlineFormProps {
 }
 
 export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProps) {
-  const { selectedItemIds, importToOutline, confirmImport, currentImportStatus } = useClient()
+  const { selectedItemIds, currentImportStatus, importToOutline } = useClient()
   const [apiToken, setApiToken] = useState('')
-  const isProcessing = currentImportStatus?.status === STATUS_IMPORT_PROCESSING
-  const isDone = currentImportStatus?.status === STATUS_IMPORT_DONE
-  const isError = currentImportStatus?.status === STATUS_IMPORT_ERROR
+  const isProcessing = currentImportStatus?.status === ITEM_STATUS_IMPORTING
+  const isDone = currentImportStatus?.status === ITEM_STATUS_DONE
+  const isError = currentImportStatus?.status === ITEM_STATUS_ERROR
   const isConfirmButtonDisabled = !apiToken ||
     isLocked ||
     selectedItemIds.length === 0 ||
@@ -70,8 +70,8 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
         </p>
       </div>
       <OutlineFormStatus isMissingApiToken={!apiToken} />
-      <OutlineFormIssues />
-      <OutlineFormLogs />
+      {/* <OutlineFormIssues />
+      <OutlineFormLogs /> */}
       <div className='form-field'>
         <div className='form-control justify-between'>
           <button
@@ -81,7 +81,7 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
               isProcessing && 'btn-loading',
               isDone && 'hidden',
             )}
-            onClick={confirmImport}
+            // onClick={confirmImport}
             disabled={isConfirmButtonDisabled}
           >
             {isProcessing ? 'Working on it' : 'Go ahead'}

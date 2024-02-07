@@ -1,4 +1,4 @@
-import { ensureDir, pathExists, readJson, writeJson } from 'fs-extra'
+import { ensureDir, pathExists, pathExistsSync, readJson, writeJson } from 'fs-extra'
 import type {
   ICodaApis,
   ICodaItem,
@@ -8,6 +8,8 @@ import type {
   ICodaApiDoc,
   IStatus,
   ICodaApiPage,
+  IExporter,
+  ICodaDoc,
 } from './interfaces'
 import { codaDocsPath, itemsJsonPath } from './lib'
 import {
@@ -23,6 +25,7 @@ import {
 } from './events'
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { isAxiosError } from 'axios'
+import { CodaExporter } from './transfers/CodaExporter'
 
 export class Mover implements IMover {
   private readonly _items: Record<string, ICodaItem> = {}
@@ -37,14 +40,22 @@ export class Mover implements IMover {
     },
   })
 
-  get items (): Record<string, ICodaItem> {
-    return this._items
-  }
+  private _exporter: IExporter | undefined
 
   constructor (
     private readonly server: IServer,
     private readonly codaApis: ICodaApis,
   ) {}
+
+  get items (): Record<string, ICodaItem> {
+    return this._items
+  }
+
+  get exporter (): IExporter {
+    if (!this._exporter) this._exporter = new CodaExporter(this, this.codaApis)
+
+    return this._exporter
+  }
 
   listDocs () {
     this.setStatus(CLIENT_LIST_DOCS, ITEM_STATUS_PENDING)
@@ -106,11 +117,17 @@ export class Mover implements IMover {
   }
 
   listPages (docId: string) {
+    const doc = this._items[docId]
+    if (!doc) throw Error(`[${docId}] doc not found`)
+
     this.setStatus(docId, ITEM_STATUS_PENDING)
 
     this.tasks.add({
       id: `list:${docId}`,
-      execute: async () => await this.queueListingPages(docId),
+      execute: async () => {
+        await ensureDir(`${codaDocsPath}/${doc.name}`)
+        await this.queueListingPages(docId)
+      },
       priority: TaskPriority.HIGH,
     })
 
@@ -118,7 +135,6 @@ export class Mover implements IMover {
   }
 
   async queueListingPages (docId: string, pageToken?: string) {
-    await ensureDir(codaDocsPath)
     this.setStatus(docId, ITEM_STATUS_LISTING)
 
     const pageListingRes = await this.codaApis.listPagesForDoc(docId, pageToken)
@@ -145,18 +161,39 @@ export class Mover implements IMover {
       const parentId = apiPage.parent?.id || docId
       const parent = this._items[parentId]
       if (!parent) throw Error(`[${apiPage.id}] parent not found`)
+      if (apiPage.contentType !== 'canvas') return // only `canvas` type pages are exportable
 
       const page = {
         ...this._items[apiPage.id],
         id: apiPage.id,
         name: apiPage.name,
-        treePath: `${parent.treePath}${parent.name}/`,
+        treePath: `${parent.treePath}${parent.id}/`,
       }
 
       this._items[page.id] = page
 
-      // TODO: queue exporting pages
+      // Only sync page to disk if page is out of sync
+      if (!page.syncedAt || !page.filePath) {
+        this.exporter.queuePageExport(page)
+      } else if (page.syncedAt < apiPage.updatedAt || page.syncedAt < apiPage.createdAt) {
+        this.exporter.queuePageExport(page)
+      } else if (!pathExistsSync(page.filePath)) {
+        this.exporter.queuePageExport(page)
+      }
     })
+  }
+
+  requestImportOutline (outlineApiToken: string, items: ICodaItem[]) {
+    this.cancelExports()
+    const docs = items.filter(item => item.treePath === '/') as ICodaDoc[]
+
+    docs.forEach(doc => {
+      this.listPages(doc.id)
+    })
+  }
+
+  cancelImports () {
+    this.cancelExports()
   }
 
   async saveItems () {
@@ -191,5 +228,17 @@ export class Mover implements IMover {
 
   getStatus (id: string) {
     return this._itemStatuses[id].status || ''
+  }
+
+  cancelExports () {
+    if (this._exporter) {
+      this._exporter.stopPendingExports()
+      this._exporter = undefined
+    }
+  }
+
+  dispose () {
+    this.tasks.dispose()
+    this.cancelImports()
   }
 }
