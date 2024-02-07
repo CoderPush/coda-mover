@@ -272,9 +272,10 @@ export class Mover implements IMover {
       ITEM_STATUS_EXPORTING,
       ITEM_STATUS_PENDING,
       ITEM_STATUS_DOWNLOADING,
-      ITEM_STATUS_IMPORTING,
     ]
-    if (!ignoredClientNotifiedStatuses.includes(status)) {
+    const isStatusIgnored = ignoredClientNotifiedStatuses.includes(status)
+    const isImportingItem = status === ITEM_STATUS_IMPORTING && id.includes('import::')
+    if (!isStatusIgnored && !isImportingItem) {
       this.server.emit(SERVER_RETURN_STATUS, itemStatus)
     }
   }

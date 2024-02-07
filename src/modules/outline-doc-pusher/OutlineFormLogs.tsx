@@ -11,7 +11,7 @@ export function OutlineFormLogs () {
   return (
     <div
       className={classNames(
-        'outline-form__logs pl-2 overflow-y-auto',
+        'outline-form__logs pl-2 pr-4 overflow-y-auto',
         !isVisible && 'hidden',
       )}
     >
