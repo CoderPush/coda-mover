@@ -1,5 +1,11 @@
 # coda-mover
 
+## 2.1.0
+
+### Minor Changes
+
+- Concise and performant flows
+
 ## 2.0.2
 
 ### Patch Changes
