@@ -41,7 +41,10 @@ export class OutlineImporter implements IImporter {
       this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
     },
     onItemDone: () => {
-      if (this.tasks.pendingCount + this.tasks.runningCount <= 1) {
+      if (
+        this.tasks.pendingCount + this.tasks.runningCount <= 1 &&
+        this.waitingExports.length === 0
+      ) {
         this.setStatus(CLIENT_IMPORT_OUTLINE, ITEM_STATUS_DONE)
       }
     },
@@ -49,6 +52,7 @@ export class OutlineImporter implements IImporter {
 
   private collectionId: string | undefined
   private documentTreeItems: IOutlineItem[] = []
+  private waitingExports: Array<{ id: string, outlineTreePath: string }> = []
 
   constructor (
     private readonly mover: IMover,
@@ -145,15 +149,13 @@ export class OutlineImporter implements IImporter {
     const outlineTreePath = '/'
     if (this.mover.itemStatuses[doc.id]?.status === ITEM_STATUS_LISTING) {
       this.setStatus(doc.id, ITEM_STATUS_WAITING, `Waiting for listing ${doc.name}`)
-      // retry later at low priority if doc is still being listed
-      this.tasks.add({
-        id: doc.id,
-        execute: async () => await this.importDoc(doc),
-        priority: TaskPriority.LOW,
-      })
+      this.waitingExports.push({ id: doc.id, outlineTreePath })
 
       return
     }
+
+    this.setStatus(doc.id, ITEM_STATUS_IMPORTING, `Importing doc ${doc.name}`)
+    this.waitingExports = this.waitingExports.filter(i => i.id === doc.id)
 
     if (this.mover.itemStatuses[doc.id]?.status !== ITEM_STATUS_DONE) {
       throw Error(`Error syncing ${doc.name} (${doc.id})`)
@@ -190,17 +192,13 @@ export class OutlineImporter implements IImporter {
   private async importPage (page: ICodaPage, outlineTreePath = '/') {
     if (this.mover.itemStatuses[page.id]?.status !== ITEM_STATUS_DONE) {
       this.setStatus(page.id, ITEM_STATUS_WAITING, `Waiting for syncing ${page.name}`)
-      // retry later at low priority if doc is still being listed
-      this.tasks.add({
-        id: page.id,
-        execute: async () => await this.importPage(page, outlineTreePath),
-        priority: TaskPriority.LOW,
-      })
+      this.waitingExports.push({ id: page.id, outlineTreePath })
 
       return
     }
 
     this.setStatus(page.id, ITEM_STATUS_IMPORTING, `Importing page ${page.name}`)
+    this.waitingExports = this.waitingExports.filter(i => i.id !== page.id)
 
     const outlineParentId = trimSlashes(outlineTreePath).split('/').pop()
     if (!outlineParentId) throw Error('Outline parent id not found')
@@ -281,7 +279,25 @@ export class OutlineImporter implements IImporter {
     this.tasks.dispose()
   }
 
-  items () {
-    return this.mover.items
+  onItemExported (item: ICodaItem) {
+    const isDoc = item.treePath === '/'
+    const waitingItem = this.waitingExports.find(i => i.id === item.id)
+    if (!waitingItem) return
+
+    if (isDoc) {
+      this.tasks.add({
+        id: item.id,
+        execute: async () => await this.importDoc(item),
+        priority: TaskPriority.LOW,
+      })
+    } else {
+      this.tasks.add({
+        id: item.id,
+        execute: async () => await this.importPage(item, waitingItem.outlineTreePath),
+        priority: TaskPriority.LOW,
+      })
+    }
+
+    this.tasks.next()
   }
 }

@@ -17,13 +17,14 @@ import {
   CLIENT_IMPORT_OUTLINE,
   CLIENT_LIST_DOCS,
   ITEM_STATUS_DONE,
+  ITEM_STATUS_DOWNLOADING,
   ITEM_STATUS_ERROR,
+  ITEM_STATUS_EXPORTING,
   ITEM_STATUS_LISTING,
   ITEM_STATUS_PENDING,
   SERVER_LOAD_ITEMS,
   SERVER_RETURN_DOCS,
   SERVER_RETURN_STATUS,
-  SERVER_SAVE_ITEMS,
 } from './events'
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { isAxiosError } from 'axios'
@@ -104,11 +105,6 @@ export class Mover implements IMover {
       })
     } else {
       this.setStatus(CLIENT_LIST_DOCS, ITEM_STATUS_DONE)
-      this.tasks.add({
-        id: SERVER_SAVE_ITEMS,
-        execute: async () => await this.saveItems(),
-        priority: TaskPriority.IDLE,
-      })
     }
   }
 
@@ -161,11 +157,6 @@ export class Mover implements IMover {
       })
     } else {
       this.setStatus(docId, ITEM_STATUS_DONE)
-      this.tasks.add({
-        id: SERVER_SAVE_ITEMS,
-        execute: async () => await this.saveItems(),
-        priority: TaskPriority.IDLE,
-      })
     }
   }
 
@@ -268,7 +259,17 @@ export class Mover implements IMover {
       console.info(`[mover] ${id}`, status)
     }
 
-    this.server.emit(SERVER_RETURN_STATUS, itemStatus)
+    /**
+     * Just so importer can wait for exporter to complete downloading a doc or page before importing it
+     * This is considered as a temporary solution
+     */
+    if (status === ITEM_STATUS_DONE && this._importer && this.items[id]) {
+      this._importer.onItemExported(this.items[id])
+    }
+
+    if (status !== ITEM_STATUS_EXPORTING && status !== ITEM_STATUS_PENDING && status !== ITEM_STATUS_DOWNLOADING) {
+      this.server.emit(SERVER_RETURN_STATUS, itemStatus)
+    }
   }
 
   getStatus (id: string) {

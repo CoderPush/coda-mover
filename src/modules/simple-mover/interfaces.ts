@@ -22,6 +22,12 @@ export interface IImporter {
   importPageWithHtml: (page: ICodaPage, parentDocumentId: string) => Promise<IOutlineDocument>
 
   stopPendingImports: () => void
+
+  /**
+   * Just so importer can wait for exporter to complete downloading a doc or page before importing it
+   * This is considered as a temporary solution
+   */
+  onItemExported: (item: ICodaItem) => void
 }
 
 export interface IMover {
@@ -42,6 +48,8 @@ export interface IMover {
   saveItems: () => Promise<void>
   dispose: () => void
 }
+
+export type IStatusUpdateHandler = (itemStatus: IItemStatus) => void
 
 export interface IItemStatus {
   id: string

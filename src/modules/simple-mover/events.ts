@@ -11,7 +11,7 @@ export const CLIENT_REJECT_IMPORT = 'reject import'
 export const CLIENT_CONFIRM_IMPORT = 'confirm import'
 
 export const SERVER_SAVE_ITEMS = 'save items'
-export const SERVER_LOAD_ITEMS = 'save items'
+export const SERVER_LOAD_ITEMS = 'load items'
 
 export const ITEM_STATUS_PENDING = 'pending'
 export const ITEM_STATUS_LISTING = 'listing'

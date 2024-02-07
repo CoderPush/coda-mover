@@ -7,6 +7,7 @@ import { download } from '../../mover/apis'
 import { ITEM_STATUS_DONE, ITEM_STATUS_DOWNLOADING, ITEM_STATUS_ERROR, ITEM_STATUS_EXPORTING, ITEM_STATUS_PENDING, SERVER_SAVE_ITEMS } from '../events'
 
 export class CodaExporter implements IExporter {
+  private importChunkCounter = 0
   private readonly tasks = new TaskEmitter({
     concurrency: 1,
     onItemError: (item, error) => {
@@ -19,12 +20,17 @@ export class CodaExporter implements IExporter {
       this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
     },
     onItemDone: (item) => {
-      if (this.tasks.pendingCount === 0 && item.id !== SERVER_SAVE_ITEMS) {
+      if (item.id === SERVER_SAVE_ITEMS || !item.id) return
+      if (this.mover.itemStatuses[item.id].status !== ITEM_STATUS_DONE) return
+
+      this.importChunkCounter++
+      if (this.importChunkCounter >= 6 || (this.tasks.pendingCount + this.tasks.runningCount) <= 1) {
+        this.importChunkCounter = 0
         this.tasks.add({
           id: SERVER_SAVE_ITEMS,
           execute: async () => await this.mover.saveItems(),
-          priority: TaskPriority.HIGH,
         })
+        this.tasks.next()
       }
     },
   })
@@ -79,10 +85,8 @@ export class CodaExporter implements IExporter {
       encoding: 'utf8',
     }))
 
-    const syncedPage = { ...page, filePath: pageFilePath }
-
+    this.items[page.id].filePath = pageFilePath
     this.setStatus(page.id, ITEM_STATUS_DONE)
-    this.items[page.id] = syncedPage
   }
 
   stopPendingExports () {
