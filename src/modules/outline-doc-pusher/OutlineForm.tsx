@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ITEM_STATUS_DONE, ITEM_STATUS_ERROR, ITEM_STATUS_IMPORTING, useClient } from '../simple-mover/client'
-// import { OutlineFormIssues } from './OutlineFormIssues'
+import { OutlineFormIssues } from './OutlineFormIssues'
 // import { OutlineFormLogs } from './OutlineFormLogs'
 import { OutlineFormStatus } from './OutlineFormStatus'
 import classNames from 'classnames'
@@ -70,8 +70,8 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
         </p>
       </div>
       <OutlineFormStatus isMissingApiToken={!apiToken} />
-      {/* <OutlineFormIssues />
-      <OutlineFormLogs /> */}
+      <OutlineFormIssues />
+      {/*  <OutlineFormLogs /> */}
       <div className='form-field'>
         <div className='form-control justify-between'>
           <button

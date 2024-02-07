@@ -16,7 +16,9 @@ interface IMoverClientContextValue {
   deselect: IClient['deselect']
 
   currentImportStatus?: IItemStatus
+  importIssues: string[]
   importToOutline: IClient['importToOutline']
+  cancelImport: IClient['cancelImport']
 }
 
 // Create the MoverClientContext
@@ -39,6 +41,7 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [mover, setMover] = useState<MoverClient | null>(null)
+  const [importIssues, setImportIssues] = useState<string[]>([])
   const isListingDocs = itemStatuses[CLIENT_LIST_DOCS] && (
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_DONE &&
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_ERROR
@@ -55,6 +58,7 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
         onItems: items => setItems(items),
         onStatuses: itemStatuses => setItemStatuses(itemStatuses),
         onSelectionChange: selectedItemIds => setSelectedItemIds(selectedItemIds),
+        onImportIssues: issues => setImportIssues(issues),
       })
 
       client.handleServerResponses()
@@ -72,10 +76,12 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     isConnected,
     isListingDocs,
     currentImportStatus,
+    importIssues,
     listDocs: (codaApiToken: string) => mover?.listDocs(codaApiToken),
     select: (...itemIds) => mover?.select(...itemIds),
     deselect: (...itemIds) => mover?.deselect(...itemIds),
     importToOutline: (outlineApiToken: string) => mover?.importToOutline(outlineApiToken),
+    cancelImport: () => mover?.cancelImport(),
   }
 
   return (

@@ -11,6 +11,19 @@ export interface IExporter {
   stopPendingExports: () => void
 }
 
+export interface IImporter {
+  validateImport: () => Promise<void>
+
+  // confirmImport: () => Promise<void>
+  // createCollectionIfNotExists: (collectionName: string) => Promise<void>
+  // collectDocumentTree: (collectionId: string) => Promise<void>
+  // createDocIfNotExists: (doc: ICodaDoc) => Promise<void>
+  // archiveOutdatedPage: (page: ICodaPage) => Promise<void>
+  // importPageWithHtml: (page: ICodaPage) => Promise<void>
+
+  stopPendingImports: () => void
+}
+
 export interface IMover {
   readonly items: Record<string, ICodaItem>
 
@@ -18,6 +31,7 @@ export interface IMover {
   listPages: (docId: string) => void
 
   requestImportOutline: (outlineApiToken: string, items: ICodaItem[]) => void
+  returnImportIssues: (...issues: string[]) => void
   cancelImports: () => void
 
   setStatus: (id: string, status: IStatus, message?: string) => void
@@ -48,6 +62,7 @@ export interface IClient {
   deselect: (...itemIds: string[]) => void
 
   importToOutline: (outlineApiToken: string) => void
+  cancelImport: () => void
 }
 
 export type IItemStatuses = Record<string, IItemStatus>
@@ -57,4 +72,5 @@ export interface IClientHandlers {
   onItems?: (items: ICodaItem[]) => void
   onStatuses?: (itemStatuses: IItemStatuses) => void
   onSelectionChange?: (selectedItemIds: string[]) => void
+  onImportIssues?: (issues: string[]) => void
 }

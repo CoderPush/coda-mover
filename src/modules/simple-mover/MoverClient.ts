@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client'
 import {
   CLIENT_IMPORT_OUTLINE,
-  CLIENT_LIST_DOCS, ITEM_STATUS_PENDING, SERVER_RETURN_DOCS, SERVER_RETURN_STATUS,
+  CLIENT_LIST_DOCS, ITEM_STATUS_CANCELLED, ITEM_STATUS_PENDING, SERVER_RETURN_DOCS, SERVER_RETURN_STATUS,
 } from './events'
 import type {
   ICodaDoc,
@@ -11,6 +11,7 @@ import type {
   IItemStatus,
   IItemStatuses,
 } from './interfaces'
+import { SERVER_IMPORT_ISSUES } from '../mover/events'
 
 export class MoverClient implements IClient {
   private items: Record<string, ICodaItem> = {}
@@ -33,11 +34,18 @@ export class MoverClient implements IClient {
 
   importToOutline (outlineApiToken: string) {
     this.setItemStatus({ id: CLIENT_IMPORT_OUTLINE, status: ITEM_STATUS_PENDING })
+    this.handlers.onImportIssues?.([])
+
     this.socket.emit(
       CLIENT_IMPORT_OUTLINE,
       outlineApiToken,
       this.selectedItemIds.map(id => this.items[id]).filter(Boolean),
     )
+  }
+
+  cancelImport () {
+    this.handlers.onImportIssues?.([])
+    this.setItemStatus({ id: CLIENT_IMPORT_OUTLINE, status: ITEM_STATUS_CANCELLED })
   }
 
   handleServerResponses () {
@@ -66,6 +74,10 @@ export class MoverClient implements IClient {
       this.items = items
 
       this.handlers.onItems?.(Object.values(this.items))
+    })
+
+    this.socket.on(SERVER_IMPORT_ISSUES, (issues: string[]) => {
+      this.handlers.onImportIssues?.(issues)
     })
   }
 

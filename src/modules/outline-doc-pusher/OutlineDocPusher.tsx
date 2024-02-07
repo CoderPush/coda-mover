@@ -5,7 +5,7 @@ import { ITEM_STATUS_IMPORTING, ITEM_STATUS_VALIDATING, useClient } from '../sim
 import { OutlineForm } from './OutlineForm'
 
 export function OutlineDocPusher () {
-  const { selectedItemIds, currentImportStatus } = useClient()
+  const { selectedItemIds, currentImportStatus, cancelImport } = useClient()
   const isBottomBoxShown = selectedItemIds.length > 0
   const isSideFormLocked = currentImportStatus?.status === ITEM_STATUS_VALIDATING ||
     currentImportStatus?.status === ITEM_STATUS_IMPORTING
@@ -14,7 +14,7 @@ export function OutlineDocPusher () {
   const closeSideForm = () => {
     if (isSideFormLocked) return
     setIsSideFormOpened(false)
-    // cancelImport()
+    cancelImport()
   }
 
   return (

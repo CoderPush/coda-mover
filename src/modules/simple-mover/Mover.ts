@@ -10,6 +10,7 @@ import type {
   ICodaApiPage,
   IExporter,
   ICodaDoc,
+  IImporter,
 } from './interfaces'
 import { codaDocsPath, itemsJsonPath } from './lib'
 import {
@@ -26,6 +27,9 @@ import {
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { isAxiosError } from 'axios'
 import { CodaExporter } from './transfers/CodaExporter'
+import { SERVER_IMPORT_ISSUES } from '../mover/events'
+import { OutlineImporter } from './transfers/OutlineImporter'
+import { OutlineApis } from './apis/OutlineApis'
 
 export class Mover implements IMover {
   private readonly _items: Record<string, ICodaItem> = {}
@@ -41,6 +45,7 @@ export class Mover implements IMover {
   })
 
   private _exporter: IExporter | undefined
+  private _importer: IImporter | undefined
 
   constructor (
     private readonly server: IServer,
@@ -183,17 +188,35 @@ export class Mover implements IMover {
     })
   }
 
-  requestImportOutline (outlineApiToken: string, items: ICodaItem[]) {
+  async requestImportOutline (outlineApiToken: string, items: ICodaItem[]) {
     this.cancelExports()
+
     const docs = items.filter(item => item.treePath === '/') as ICodaDoc[]
 
+    // queue listing and exporting pages in background
     docs.forEach(doc => {
       this.listPages(doc.id)
     })
+
+    this._importer = new OutlineImporter(
+      this,
+      new OutlineApis(outlineApiToken),
+      docs,
+    )
+
+    await this._importer.validateImport()
+  }
+
+  returnImportIssues (...issues: string[]) {
+    this.server.emit(SERVER_IMPORT_ISSUES, issues)
   }
 
   cancelImports () {
     this.cancelExports()
+    if (this._importer) {
+      this._importer.stopPendingImports()
+      this._importer = undefined
+    }
   }
 
   async saveItems () {
@@ -230,7 +253,7 @@ export class Mover implements IMover {
     return this._itemStatuses[id].status || ''
   }
 
-  cancelExports () {
+  private cancelExports () {
     if (this._exporter) {
       this._exporter.stopPendingExports()
       this._exporter = undefined
