@@ -1,10 +1,12 @@
 import classNames from 'classnames'
-import { ITEM_STATUS_DONE, ITEM_STATUS_IMPORTING, useClient } from '../simple-mover/client'
+import { ITEM_STATUS_DONE, ITEM_STATUS_IMPORTING, useClient } from '@/modules/simple-mover/client'
 
 export function OutlineFormLogs () {
   const { importLogs, currentImportStatus } = useClient()
   const isVisible = currentImportStatus?.status === ITEM_STATUS_IMPORTING ||
     currentImportStatus?.status === ITEM_STATUS_DONE
+
+  if (!isVisible) return null
 
   return (
     <div

@@ -26,6 +26,7 @@ import {
   SERVER_RETURN_DOCS,
   SERVER_RETURN_STATUS,
   SERVER_IMPORT_RETURN_ISSUES,
+  ITEM_STATUS_IMPORTING,
 } from './events'
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { isAxiosError } from 'axios'
@@ -267,7 +268,13 @@ export class Mover implements IMover {
       this._importer.onItemExported(this.items[id])
     }
 
-    if (status !== ITEM_STATUS_EXPORTING && status !== ITEM_STATUS_PENDING && status !== ITEM_STATUS_DOWNLOADING) {
+    const ignoredClientNotifiedStatuses = [
+      ITEM_STATUS_EXPORTING,
+      ITEM_STATUS_PENDING,
+      ITEM_STATUS_DOWNLOADING,
+      ITEM_STATUS_IMPORTING,
+    ]
+    if (!ignoredClientNotifiedStatuses.includes(status)) {
       this.server.emit(SERVER_RETURN_STATUS, itemStatus)
     }
   }

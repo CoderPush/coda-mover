@@ -4,7 +4,7 @@ import {
   ITEM_STATUS_ERROR,
   ITEM_STATUS_VALIDATING,
   useClient,
-} from '../simple-mover/client'
+} from '@/modules/simple-mover/client'
 
 export function OutlineFormStatus ({ isMissingApiToken }: { isMissingApiToken: boolean }) {
   const { currentImportStatus, importIssues } = useClient()

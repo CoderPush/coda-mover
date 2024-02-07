@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react'
-import { CLIENT_LIST_DOCS, ITEM_STATUS_DONE, useClient } from '../simple-mover/client'
+import { CLIENT_LIST_DOCS, ITEM_STATUS_DONE, useClient } from '@/modules/simple-mover/client'
 import { CodaItem } from './CodaItem'
 
 export interface ICodaDocListProps extends HTMLAttributes<HTMLElement> {}
