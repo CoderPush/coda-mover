@@ -4,9 +4,11 @@
   "version": "2.1.1",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "ELECTRON_IS_DEV=1 pnpm build:electron && electron dist/electron",
+    "build:next": "NODE_ENV=production next build",
+    "build:electron": "tsc -p electron",
+    "build": "pnpm build:next && pnpm build:electron",
+    "dist": "pnpm build && electron-builder",
     "lint": "eslint . --ext js --ext ts --ext tsx",
     "changeset": "changeset"
   },
@@ -28,7 +30,12 @@
     "@types/node": "^20.11.6",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
+    "app-root-path": "^3.1.0",
     "autoprefixer": "^10.4.17",
+    "concurrently": "^8.2.2",
+    "electron": "^28.2.3",
+    "electron-builder": "^24.9.1",
+    "electron-reload": "2.0.0-alpha.1",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.1.0",
     "eslint-config-standard": "^17.1.0",
@@ -44,5 +51,23 @@
     "sass": "^1.70.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3"
+  },
+  "main": "dist/electron/index.js",
+  "build": {
+    "appId": "com.coderpush.coda-mover",
+    "productName": "Coda Mover",
+    "copyright": "Copyright © 2024 CoderPush",
+    "asar": true,
+    "directories": {
+      "buildResources": "electron/resources"
+    },
+    "files": [
+      "dist/electron",
+      "dist/next"
+    ]
+  },
+  "author": {
+    "name": "hungluu",
+    "email": "hugh@coderpush.com"
   }
 }
