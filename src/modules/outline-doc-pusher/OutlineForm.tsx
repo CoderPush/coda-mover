@@ -7,14 +7,14 @@ import { OutlineFormLogs } from './OutlineFormLogs'
 import { OutlineFormStatus } from './OutlineFormStatus'
 import classNames from 'classnames'
 import { useLocalTokens } from '@/modules/local-tokens'
+import { OutlineFormStopBtn } from './OutlineFormStopBtn'
 
 export interface IOutlineFormProps {
   isLocked?: boolean
-  isOpened: boolean
   closeForm: () => void
 }
 
-export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProps) {
+export function OutlineForm ({ isLocked, closeForm }: IOutlineFormProps) {
   const { selectedItemIds, currentImportStatus, importToOutline, confirmImport } = useClient()
   const { outlineApiToken: apiToken, setApiTokenFor } = useLocalTokens()
   const isProcessing = currentImportStatus?.status === ITEM_STATUS_IMPORTING
@@ -32,7 +32,7 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
   }, [apiToken]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <form className='outline-form flex flex-col max-h-full gap-2'>
+    <form className='outline-form flex flex-col max-h-full gap-2' onSubmit={ev => ev.preventDefault()}>
       <h3>Confirm Outline Import</h3>
       <div className='form-field'>
         <label className='form-label'>Outline API Token</label>
@@ -83,16 +83,18 @@ export function OutlineForm ({ isLocked, isOpened, closeForm }: IOutlineFormProp
           </button>
         </div>
         <div className='form-control justify-between mt-2'>
-          <button
-            type='button'
-            className={classNames(
-              'btn w-full cursor-pointer! disabled',
-              isLocked ? 'text-zinc-300' : 'hover:bg-gray-200',
-            )}
-            onClick={closeForm}
-          >
-            {isDone ? 'Close' : 'Hmm.. not sure'}
-          </button>
+          {isProcessing
+            ? (<OutlineFormStopBtn onStop={closeForm} />)
+            : (
+              <button
+                type='button'
+                className={classNames(
+                  'btn w-full cursor-pointer! disabled',
+                  isLocked ? 'text-zinc-300' : 'hover:bg-gray-200',
+                )}
+                onClick={closeForm}
+              >{isDone ? 'Close' : 'Hmm.. not sure'}
+              </button>)}
         </div>
       </div>
     </form>

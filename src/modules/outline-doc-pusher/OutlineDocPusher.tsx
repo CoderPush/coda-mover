@@ -12,7 +12,6 @@ export function OutlineDocPusher () {
   const [isSideFormOpened, setIsSideFormOpened] = useState(false)
 
   const closeSideForm = () => {
-    if (isSideFormLocked) return
     setIsSideFormOpened(false)
     cancelImport()
   }
@@ -27,7 +26,7 @@ export function OutlineDocPusher () {
           </h5>
 
           <label
-            htmlFor='drawer-right'
+            htmlFor='outline-form-open'
             className='btn btn-primary font-bold cursor-pointer! bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl'
           >
             Push to Outline
@@ -36,7 +35,7 @@ export function OutlineDocPusher () {
       )}
       <input
         type='checkbox'
-        id='drawer-right'
+        id='outline-form-open'
         className='drawer-toggle'
         checked={isSideFormOpened}
         onChange={ev => setIsSideFormOpened(ev.target.checked)}
@@ -45,7 +44,7 @@ export function OutlineDocPusher () {
       <div className='drawer drawer-right'>
         <div className='drawer-content flex flex-col h-full'>
           {isSideFormOpened && (
-            <OutlineForm isLocked={isSideFormLocked} isOpened={isSideFormOpened} closeForm={closeSideForm} />
+            <OutlineForm isLocked={isSideFormLocked} closeForm={closeSideForm} />
           )}
         </div>
       </div>
