@@ -226,6 +226,7 @@ export class Mover implements IMover {
   cancelImports () {
     this.cancelExports()
     if (this._importer) {
+      console.info('[mover] cancel imports')
       this._importer.stopPendingImports()
       this._importer = undefined
     }
@@ -286,6 +287,7 @@ export class Mover implements IMover {
 
   private cancelExports () {
     if (this._exporter) {
+      console.info('[mover] cancel exports')
       this._exporter.stopPendingExports()
       this._exporter = undefined
     }

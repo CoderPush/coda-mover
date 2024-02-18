@@ -3,6 +3,7 @@ import {
   CLIENT_CONFIRM_IMPORT,
   CLIENT_IMPORT_OUTLINE,
   CLIENT_LIST_DOCS,
+  CLIENT_REJECT_IMPORT,
   ITEM_STATUS_CANCELLED,
   ITEM_STATUS_CONFIRMING,
   ITEM_STATUS_DONE,
@@ -67,6 +68,7 @@ export class MoverClient implements IClient {
     this.handlers.onImportLogs?.([])
     this.clearImportProgress()
 
+    this.socket.emit(CLIENT_REJECT_IMPORT)
     this.setItemStatus({ id: CLIENT_IMPORT_OUTLINE, status: ITEM_STATUS_CANCELLED })
   }
 
