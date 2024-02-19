@@ -54,24 +54,19 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (mover) return
 
-    // Ensure mover server started
-    fetch('/api/mover').then(() => {
-      const client = new MoverClient({
-        onConnection: state => setIsConnected(state === 'opened'),
-        onItems: items => setItems(items),
-        onStatuses: itemStatuses => setItemStatuses(itemStatuses),
-        onSelectionChange: selectedItemIds => setSelectedItemIds(selectedItemIds),
-        onImportIssues: issues => setImportIssues(issues),
-        onImportLogs: logs => setImportLogs(logs),
-      })
-
-      client.handleServerResponses()
-
-      setMover(client)
-    }).catch(err => {
-      console.error(err)
+    const client = new MoverClient({
+      onConnection: state => setIsConnected(state === 'opened'),
+      onItems: items => setItems(items),
+      onStatuses: itemStatuses => setItemStatuses(itemStatuses),
+      onSelectionChange: selectedItemIds => setSelectedItemIds(selectedItemIds),
+      onImportIssues: issues => setImportIssues(issues),
+      onImportLogs: logs => setImportLogs(logs),
     })
-  })
+
+    client.handleServerResponses()
+
+    setMover(client)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const context: IMoverClientContextValue = {
     items,

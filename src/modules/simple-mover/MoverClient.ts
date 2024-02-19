@@ -1,4 +1,4 @@
-import { io } from 'socket.io-client'
+import { type Socket, io } from 'socket.io-client'
 import {
   CLIENT_CONFIRM_IMPORT,
   CLIENT_IMPORT_OUTLINE,
@@ -24,16 +24,25 @@ import type {
   IImportLog,
 } from './interfaces'
 
+declare const envs: {
+  WEBSOCKET_URL: string
+}
+
 export class MoverClient implements IClient {
   private items: Record<string, ICodaItem> = {}
   private selectedItemIds: string[] = []
   private itemStatuses: IItemStatuses = {}
 
-  constructor (private readonly handlers: IClientHandlers = {}) {}
+  readonly socket: Socket
 
-  readonly socket = io('/', {
-    path: '/api/mover/io',
-  })
+  constructor (private readonly handlers: IClientHandlers = {}) {
+    const websocketUrl = envs?.WEBSOCKET_URL
+    if (!websocketUrl) throw Error('envs.WEBSOCKET_URL is not defined')
+
+    this.socket = io(websocketUrl, {
+      path: '/api/mover/io',
+    })
+  }
 
   listDocs (codaApiToken: string) {
     this.itemStatuses[CLIENT_LIST_DOCS] = {

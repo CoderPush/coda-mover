@@ -1,5 +1,12 @@
 # coda-mover
 
+## 2.1.2
+
+### Patch Changes
+
+- - Port app into Electron (MacOS builds)
+  - Add stop imports button
+
 ## 2.1.1
 
 ### Patch Changes

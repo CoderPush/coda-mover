@@ -1,22 +1,27 @@
 {
   "name": "coda-mover",
   "description": "Coda contents migration made simple",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "tsup --env.ELECTRON_IS_DEV=1 && electron dist/electron",
+    "build:next": "NODE_ENV=production next build",
+    "build:electron": "tsup --env.NODE_ENV=production",
+    "build": "pnpm build:next && pnpm build:electron",
+    "dist": "pnpm build && electron-builder",
     "lint": "eslint . --ext js --ext ts --ext tsx",
     "changeset": "changeset"
   },
   "dependencies": {
     "@abxvn/tasks": "^1.2.0",
+    "app-root-path": "^3.1.0",
     "axios": "^1.6.5",
     "classnames": "^2.5.1",
+    "electron-log": "^5.1.1",
     "form-data": "^4.0.0",
     "fs-extra": "^11.2.0",
     "next": "^14.1.0",
+    "portfinder": "^1.0.32",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "socket.io": "^4.7.4",
@@ -29,6 +34,10 @@
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.17",
+    "concurrently": "^8.2.2",
+    "electron": "^28.2.3",
+    "electron-builder": "^24.9.1",
+    "electron-reload": "2.0.0-alpha.1",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.1.0",
     "eslint-config-standard": "^17.1.0",
@@ -43,6 +52,39 @@
     "rippleui": "^1.12.1",
     "sass": "^1.70.0",
     "tailwindcss": "^3.4.1",
+    "tsup": "^8.0.2",
     "typescript": "^5.3.3"
+  },
+  "main": "dist/electron/index.js",
+  "homepage": "https://github.com/CoderPush/coda-mover",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:CoderPush/coda-mover.git"
+  },
+  "build": {
+    "appId": "com.coderpush.codamover",
+    "productName": "CodaMover",
+    "copyright": "Copyright © 2024 CoderPush",
+    "asar": true,
+    "directories": {
+      "buildResources": "electron/resources"
+    },
+    "files": [
+      "dist/electron",
+      "dist/next"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "dmg": {
+      "sign": false
+    }
+  },
+  "author": {
+    "name": "hungluu",
+    "email": "hugh@coderpush.com"
   }
 }
