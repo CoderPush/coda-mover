@@ -8,7 +8,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 10
     strategy:
       matrix:
@@ -16,17 +16,15 @@ jobs:
     steps:
       - name: Running on ref
         run: echo ${{ github.ref }}
-      - name: Upgrade distro
-        run: sudo apt update
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
         name: Install pnpm
         with:
           version: 8
           run_install: false
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
@@ -35,6 +33,10 @@ jobs:
           pnpm install
       - name: Build distributables
         run: pnpm dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Draft release
-        run: GH_TOKEN=${{ secrets.GITHUB_TOKEN }} pnpm release
+        run: pnpm release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

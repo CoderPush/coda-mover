@@ -109,9 +109,10 @@ Please ensure you are using Eslint extension `v2.4.2` or older. Their latest rel
 
 ### Fix Library not loaded: @rpath/Electron Framework
 
-Something wrong with cached install of Electron. You'll need to refresh while installing dependencies.
-- For `pnpm` please run `pnpm i --force`
-- For `npm` please run `npm cache --force clean && npm install`
+Something wrong with cached install of Electron. Fix this issue by re-running electron install script:
+```
+rm -rf node_modules/electron/dist && node node_modules/electron/install.js
+```
 
 More information https://github.com/electron/electron/issues/10702#issuecomment-431698637
 
