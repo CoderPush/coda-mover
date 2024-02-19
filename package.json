@@ -10,7 +10,8 @@
     "build": "pnpm build:next && pnpm build:electron",
     "dist": "pnpm build && electron-builder",
     "lint": "eslint . --ext js --ext ts --ext tsx",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "release": "electron-builder"
   },
   "dependencies": {
     "@abxvn/tasks": "^1.2.0",
@@ -81,7 +82,11 @@
     },
     "dmg": {
       "sign": false
-    }
+    },
+    "publish": [{
+      "provider": "github",
+      "releaseType": "release"
+    }]
   },
   "author": {
     "name": "hungluu",
