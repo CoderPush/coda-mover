@@ -31,7 +31,7 @@ export class MoverClient implements IClient {
 
   constructor (private readonly handlers: IClientHandlers = {}) {}
 
-  readonly socket = io('/', {
+  readonly socket = io('http://localhost:8678', {
     path: '/api/mover/io',
   })
 

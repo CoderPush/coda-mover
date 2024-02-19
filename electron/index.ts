@@ -1,48 +1,59 @@
-import { join } from 'path'
 import { format } from 'url'
 import { BrowserWindow, app, dialog } from 'electron'
 import { electronNext, isDev } from './next'
-import electronReload from 'electron-reload'
+import { initWebsocketServer } from './websocket'
+import { nextDevPort, nextDirPath, nextDistSubPath, windowHeight, windowWidth, log } from './config'
 
 // dev only, reloading all browser windows
-electronReload(__dirname, {})
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+if (isDev) require('electron-reload')(__dirname, {})
 
-const nextPort = 3000
 const onAppReady = async () => {
   try {
-    await electronNext('./', nextPort)
+    await initWebsocketServer()
+    await electronNext({
+      dirPath: nextDirPath,
+      devPort: nextDevPort,
+      distSubPath: nextDistSubPath,
+    })
 
     const mainWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
+      width: windowWidth,
+      height: windowHeight,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: join(__dirname, 'preload.js'),
+        // preload: join(__dirname, 'preload.js'),
       },
     })
 
-    const url = isDev
-      ? `http://localhost:${nextPort}/`
-      : format({
-        pathname: join(__dirname, '../next/index.html'),
+    let url = `http://localhost:${nextDevPort}/`
+    if (!isDev) {
+      url = format({
+        pathname: `${nextDirPath}/${nextDistSubPath}/index.html`,
         protocol: 'file:',
         slashes: true,
       })
+    }
 
     await mainWindow.loadURL(url)
+
+    if (isDev) mainWindow.webContents.openDevTools()
   } catch (err: any) {
-    dialog.showErrorBox('[app] start error', [
-      err.message as string,
-      err.stack as string,
-    ].join('\n'))
+    dialog.showErrorBox('[app] start error', err.message as string)
+    log.error('[app] start error', err)
   }
 }
 
-// Prepare the renderer once the app is ready
 app.on('ready', () => {
   void onAppReady()
 })
 
 // Quit the app once all windows are closed
 app.on('window-all-closed', () => app.quit())
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    void onAppReady()
+  }
+})

@@ -4,9 +4,9 @@
   "version": "2.1.1",
   "private": true,
   "scripts": {
-    "dev": "ELECTRON_IS_DEV=1 pnpm build:electron && electron dist/electron",
+    "dev": "tsup --env.ELECTRON_IS_DEV=1 && electron dist/electron",
     "build:next": "NODE_ENV=production next build",
-    "build:electron": "tsc -p electron",
+    "build:electron": "tsup --env.NODE_ENV=production",
     "build": "pnpm build:next && pnpm build:electron",
     "dist": "pnpm build && electron-builder",
     "lint": "eslint . --ext js --ext ts --ext tsx",
@@ -14,8 +14,10 @@
   },
   "dependencies": {
     "@abxvn/tasks": "^1.2.0",
+    "app-root-path": "^3.1.0",
     "axios": "^1.6.5",
     "classnames": "^2.5.1",
+    "electron-log": "^5.1.1",
     "form-data": "^4.0.0",
     "fs-extra": "^11.2.0",
     "next": "^14.1.0",
@@ -30,7 +32,6 @@
     "@types/node": "^20.11.6",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
-    "app-root-path": "^3.1.0",
     "autoprefixer": "^10.4.17",
     "concurrently": "^8.2.2",
     "electron": "^28.2.3",
@@ -50,9 +51,15 @@
     "rippleui": "^1.12.1",
     "sass": "^1.70.0",
     "tailwindcss": "^3.4.1",
+    "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },
   "main": "dist/electron/index.js",
+  "homepage": "https://github.com/CoderPush/coda-mover",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:CoderPush/coda-mover.git"
+  },
   "build": {
     "appId": "com.coderpush.coda-mover",
     "productName": "Coda Mover",
@@ -64,7 +71,13 @@
     "files": [
       "dist/electron",
       "dist/next"
-    ]
+    ],
+    "mac": {
+      "target": ["dmg", "zip"]
+    },
+    "dmg": {
+      "sign": false
+    }
   },
   "author": {
     "name": "hungluu",

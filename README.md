@@ -25,7 +25,7 @@ pnpm i
 
 ### Start development
 
-You may start development site at `localhost:3000` with live reloading:
+A development application will start
 
 ```
 pnpm dev
@@ -55,6 +55,20 @@ To generate test coverage:
 ```
 pnpm test -- --coverage
 ```
+
+Build
+-----
+
+To build distributable package please use this command:
+
+```
+pnpm dist
+```
+
+These are formats that will be produced (file named as `Coda Mover-<version>`):
+
+- `.dmg` package for MacOS
+- `mac.zip` zip package for MacOS
 
 Contribution
 -----
@@ -92,6 +106,14 @@ nvm alias default 20.10.0
 ### Eslint not working in VSCode
 
 Please ensure you are using Eslint extension `v2.4.2` or older. Their latest released version `v2.4.4` introduces a bug that make eslint stop working.
+
+### Fix Library not loaded: @rpath/Electron Framework
+
+Something wrong with cached install of Electron. You'll need to refresh while installing dependencies.
+- For `pnpm` please run `pnpm i --force`
+- For `npm` please run `npm cache --force clean && npm install`
+
+More information https://github.com/electron/electron/issues/10702#issuecomment-431698637
 
 🍻 Cheers.
 
