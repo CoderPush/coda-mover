@@ -1,6 +1,7 @@
 // Native
 import { type RequestListener, createServer } from 'http'
 import { join, normalize } from 'path'
+import { type default as CreateNextServer } from 'next'
 
 // Packages
 import { app, protocol } from 'electron'
@@ -10,10 +11,14 @@ import { type IElectronNextOptions } from './interfaces'
 const devServer = async (options: IElectronNextOptions) => {
   // We need to load it here because the app's production
   // bundle shouldn't include it, which would result in an error
-  const next = require('next')({ // eslint-disable-line @typescript-eslint/no-var-requires
+  const createNextServer: typeof CreateNextServer = require('next') // eslint-disable-line @typescript-eslint/no-var-requires
+  const next = createNextServer({
     dev: true,
     dir: options.dirPath,
+    conf: options.conf,
   })
+
+  console.info('[next] config', options.conf)
   const requestHandler = next.getRequestHandler() as RequestListener
 
   // Build the renderer code and watch the files

@@ -51,6 +51,7 @@ const createBuildConfigs = async (name: string): Promise<Options[]> => {
 
 const packages = [
   'electron',
+  'electron/preload',
 ]
 
 export default defineConfig(async (options) => {

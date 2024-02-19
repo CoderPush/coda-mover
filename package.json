@@ -21,6 +21,7 @@
     "form-data": "^4.0.0",
     "fs-extra": "^11.2.0",
     "next": "^14.1.0",
+    "portfinder": "^1.0.32",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "socket.io": "^4.7.4",
@@ -61,8 +62,8 @@
     "url": "git@github.com:CoderPush/coda-mover.git"
   },
   "build": {
-    "appId": "com.coderpush.coda-mover",
-    "productName": "Coda Mover",
+    "appId": "com.coderpush.codamover",
+    "productName": "CodaMover",
     "copyright": "Copyright © 2024 CoderPush",
     "asar": true,
     "directories": {
@@ -73,7 +74,10 @@
       "dist/next"
     ],
     "mac": {
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "dmg": {
       "sign": false
