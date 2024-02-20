@@ -1,8 +1,7 @@
-import { resolve } from 'path'
+import { userDataPath } from './electron'
 
-export const rootPath = resolve(__dirname, '../../../../')
+export const dataPath = `${userDataPath}/coda-mover/data`
   .replace(/\\/g, '/') // fix path separator for windows
-export const dataPath = `${rootPath}/data`
 
 export const itemsJsonPath = `${dataPath}/items.json`
 export const codaDocsPath = `${dataPath}/docs`

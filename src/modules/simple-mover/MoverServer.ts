@@ -1,9 +1,9 @@
 import type { Socket } from 'socket.io'
 import type { ICodaItem, IMover, IServer } from './interfaces'
-import { CLIENT_CONFIRM_IMPORT, CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, CLIENT_REJECT_IMPORT, SERVER_RETURN_STATUS } from './events'
+import { CLIENT_CONFIRM_IMPORT, CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, CLIENT_OPEN_LINK, CLIENT_REJECT_IMPORT, SERVER_RETURN_STATUS } from './events'
 import { Mover } from './Mover'
 import { CodaApis } from './apis'
-import { logError } from './lib'
+import { logError, openLink } from './lib'
 
 export class MoverServer implements IServer {
   private _socket: Socket | undefined
@@ -26,6 +26,7 @@ export class MoverServer implements IServer {
     try {
       this.handleClientListDocs()
       this.handleClientImportOutline()
+      this.handleClientOpenLink()
     } catch (err: any) {
       logError(err, '[server] handle requests')
     }
@@ -98,6 +99,12 @@ export class MoverServer implements IServer {
           message: err.message,
         })
       }
+    })
+  }
+
+  handleClientOpenLink () {
+    this.socket.on(CLIENT_OPEN_LINK, (url: string) => {
+      void openLink(url)
     })
   }
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ITEM_STATUS_IMPORTING, ITEM_STATUS_VALIDATING, useClient } from '@/modules/simple-mover/client'
 import { OutlineForm } from './OutlineForm'
+import { OutlinePushBtn } from './OutlinePushBtn'
 
 export function OutlineDocPusher () {
   const { selectedItemIds, currentImportStatus, cancelImport } = useClient()
@@ -22,15 +23,10 @@ export function OutlineDocPusher () {
         <div className='flex items-center gap-1 p-4 shadow-[0_3px_10px_rgb(0,0,0,0.2)]'>
           <h5 className='grow m-0'>
             <span className='text-indigo-500 mr-1 font-medium'>{selectedItemIds.length}</span>
-            items selected
+            {selectedItemIds.length > 1 ? 'items' : 'item'} selected
           </h5>
 
-          <label
-            htmlFor='outline-form-open'
-            className='btn btn-primary font-bold cursor-pointer! bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl'
-          >
-            Push to Outline
-          </label>
+          <OutlinePushBtn />
         </div>
       )}
       <input

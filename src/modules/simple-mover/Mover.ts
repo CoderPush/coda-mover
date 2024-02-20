@@ -12,7 +12,7 @@ import type {
   ICodaDoc,
   IImporter,
 } from './interfaces'
-import { codaDocsPath, itemsJsonPath } from './lib'
+import { codaDocsPath, itemsJsonPath, log } from './lib'
 import {
   CLIENT_IMPORT_OUTLINE,
   CLIENT_LIST_DOCS,
@@ -111,11 +111,16 @@ export class Mover implements IMover {
 
   private receiveDocs (apiDocs: ICodaApiDoc[]) {
     const docs = apiDocs.map(apiDoc => {
-      const doc = {
+      const doc: ICodaDoc = {
         ...this._items[apiDoc.id],
         id: apiDoc.id,
         name: apiDoc.name,
         treePath: '/',
+        browserLink: apiDoc.browserLink,
+        ownerName: apiDoc.ownerName,
+        ownerEmail: apiDoc.owner,
+        folderName: apiDoc.folder.name || '',
+        folderBrowserLink: apiDoc.folder.browserLink,
       }
 
       this._items[doc.id] = doc
@@ -226,7 +231,7 @@ export class Mover implements IMover {
   cancelImports () {
     this.cancelExports()
     if (this._importer) {
-      console.info('[mover] cancel imports')
+      log.info('[mover] cancel imports')
       this._importer.stopPendingImports()
       this._importer = undefined
     }
@@ -234,7 +239,7 @@ export class Mover implements IMover {
 
   async saveItems () {
     await writeJson(itemsJsonPath, Object.values(this._items))
-    console.info('[mover] items saved')
+    log.info('[mover] items saved')
   }
 
   async loadItems () {
@@ -246,7 +251,7 @@ export class Mover implements IMover {
       this._items[item.id] = item
     })
 
-    console.info('[mover] items loaded')
+    log.info('[mover] items loaded')
   }
 
   setStatus (id: string, status: IStatus, message?: string) {
@@ -254,11 +259,11 @@ export class Mover implements IMover {
 
     this._itemStatuses[id] = itemStatus
     if (status === ITEM_STATUS_ERROR) {
-      console.error(`[mover] ${id}`, status, message)
+      log.error(`[mover] ${id}`, status, message)
     } else if (message) {
-      console.info(`[mover] ${id}`, status, message)
+      log.info(`[mover] ${id}`, status, message)
     } else {
-      console.info(`[mover] ${id}`, status)
+      log.info(`[mover] ${id}`, status)
     }
 
     /**
@@ -287,7 +292,7 @@ export class Mover implements IMover {
 
   private cancelExports () {
     if (this._exporter) {
-      console.info('[mover] cancel exports')
+      log.info('[mover] cancel exports')
       this._exporter.stopPendingExports()
       this._exporter = undefined
     }

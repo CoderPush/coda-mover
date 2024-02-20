@@ -1,6 +1,7 @@
 import { isAxiosError } from 'axios'
-import type { ICodaItem } from '../interfaces'
+import type { ICodaItem } from '../../interfaces'
 import { codaDocsPath } from './paths'
+import { log } from './electron'
 
 export const getCurrentIsoDateTime = () => {
   return (new Date()).toISOString()
@@ -8,14 +9,14 @@ export const getCurrentIsoDateTime = () => {
 
 export const logError = (error: any, itemId?: string) => {
   if (isAxiosError(error)) {
-    console.error(
+    log.error(
       `[${itemId}] request error`,
       `${error.config?.method} ${error.config?.url}`,
       error.response?.status,
       error.response?.data?.message || error.response?.data?.error,
     )
   } else {
-    console.error(`[${itemId}] error`, error)
+    log.error(`[${itemId}] error`, error)
   }
 }
 

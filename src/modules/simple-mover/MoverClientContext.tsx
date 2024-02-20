@@ -1,7 +1,8 @@
 import React, { type ReactNode, createContext, useContext, useState, useEffect } from 'react'
-import type { IItemStatus, ICodaItem, IClient, IItemStatuses, IImportLog } from './interfaces'
+import type { IItemStatus, ICodaItem, IClient, IItemStatuses, IImportLog, IDocFilters, ICodaDoc } from './interfaces'
 import { MoverClient } from './MoverClient'
 import { CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, ITEM_STATUS_DONE, ITEM_STATUS_ERROR } from './events'
+import { getHiddenDocIds } from './lib/client'
 
 // Define the shape of the MoverClientContext value
 interface IMoverClientContextValue {
@@ -12,15 +13,29 @@ interface IMoverClientContextValue {
   isListingDocs: boolean
   listDocs: IClient['listDocs']
 
-  select: IClient['select']
-  deselect: IClient['deselect']
+  select: (...itemIds: string[]) => void
+  deselect: (...itemIds: string[]) => void
+  selectOnly: (...itemIds: string[]) => void
+  selectAll: () => void
+  deselectAll: () => void
+  isSelectedAll: boolean
 
   currentImportStatus?: IItemStatus
   importIssues: string[]
   importLogs: IImportLog[]
-  importToOutline: IClient['importToOutline']
+  importToOutline: (outlineApiToken: string) => void
   confirmImport: IClient['confirmImport']
   cancelImport: IClient['cancelImport']
+
+  openLink: IClient['openLink']
+
+  filters: IDocFilters
+  // let UI decide on show or hide items instead of update item list
+  // to reduce DOM update cost
+  hiddenItemIds: string[]
+  filterBy: (key: keyof IDocFilters, value: string) => void
+  clearFilterBy: (key: keyof IDocFilters) => void
+  clearFilters: () => void
 }
 
 // Create the MoverClientContext
@@ -40,16 +55,24 @@ export const useClient = (): IMoverClientContextValue => {
 export function MoverClientProvider ({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ICodaItem[]>([])
   const [itemStatuses, setItemStatuses] = useState<IItemStatuses>({})
-  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
+  const [userSelectedItemIds, setSelectedItemIds] = useState<string[]>([])
+  const [isUserSelectedAll, setIsUserSelectedAll] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [mover, setMover] = useState<MoverClient | null>(null)
   const [importIssues, setImportIssues] = useState<string[]>([])
   const [importLogs, setImportLogs] = useState<IImportLog[]>([])
+  const [filters, setFilters] = useState<IDocFilters>({})
+
   const isListingDocs = itemStatuses[CLIENT_LIST_DOCS] && (
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_DONE &&
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_ERROR
   )
   const currentImportStatus = itemStatuses[CLIENT_IMPORT_OUTLINE]
+  const itemIds = items.map(item => item.id)
+  const isSelectedAll = isUserSelectedAll ||
+    (itemIds.length > 0 && userSelectedItemIds.length >= itemIds.length)
+  const selectedItemIds = isSelectedAll ? itemIds : userSelectedItemIds
+  const hiddenItemIds = getHiddenDocIds(items as ICodaDoc[], filters)
 
   useEffect(() => {
     if (mover) return
@@ -77,12 +100,48 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     currentImportStatus,
     importIssues,
     importLogs,
+    isSelectedAll,
+    filters,
+    hiddenItemIds,
     listDocs: (codaApiToken: string) => mover?.listDocs(codaApiToken),
-    select: (...itemIds) => mover?.select(...itemIds),
-    deselect: (...itemIds) => mover?.deselect(...itemIds),
-    importToOutline: (outlineApiToken: string) => mover?.importToOutline(outlineApiToken),
+    select (...itemIds) {
+      setSelectedItemIds(selectedItemIds => [...selectedItemIds, ...itemIds])
+    },
+    deselect (...deselectedItemIds) {
+      setSelectedItemIds(selectedItemIds => {
+        if (isSelectedAll) selectedItemIds = itemIds
+
+        return selectedItemIds.filter(id => !deselectedItemIds.includes(id))
+      })
+      setIsUserSelectedAll(false)
+    },
+    selectOnly (...itemIds) {
+      setSelectedItemIds(itemIds)
+    },
+    selectAll () {
+      setIsUserSelectedAll(true)
+    },
+    deselectAll () {
+      setSelectedItemIds([])
+      setIsUserSelectedAll(false)
+    },
+    importToOutline: (outlineApiToken: string) => mover?.importToOutline(outlineApiToken, selectedItemIds),
     confirmImport: () => mover?.confirmImport(),
     cancelImport: () => mover?.cancelImport(),
+    openLink: (url) => mover?.openLink(url),
+    filterBy (key, value) {
+      setFilters(filters => ({ ...filters, [key]: value }))
+    },
+    clearFilterBy (key) {
+      setFilters(filters => {
+        const { [key]: _, ...other } = filters
+
+        return other
+      })
+    },
+    clearFilters () {
+      setFilters({})
+    },
   }
 
   return (

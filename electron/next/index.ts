@@ -18,7 +18,6 @@ const devServer = async (options: IElectronNextOptions) => {
     conf: options.conf,
   })
 
-  console.info('[next] config', options.conf)
   const requestHandler = next.getRequestHandler() as RequestListener
 
   // Build the renderer code and watch the files
@@ -69,6 +68,12 @@ const adjustRenderer = (options: IElectronNextOptions) => {
     // so we need to undo that. This specifically allows for
     // Electron apps with spaces in their app names.
     path = decodeURIComponent(path)
+
+    if (path.includes('/_next/image?url=')) {
+      path = path.replace(/(.+)\/_next\/image\?url=([^&]+)(&.+)?/, (_, nextDist, subPath) => {
+        return `${nextDist}${subPath}`
+      })
+    }
 
     callback({ path })
   })

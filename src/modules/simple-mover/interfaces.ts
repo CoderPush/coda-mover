@@ -62,18 +62,19 @@ export interface IServer {
 
   handleClientListDocs: () => void
   handleClientImportOutline: () => void
+  handleClientOpenLink: () => void
 }
 
 export interface IClient {
   listDocs: (codaApiToken: string) => void
 
   handleServerResponses: () => void
-  select: (...itemIds: string[]) => void
-  deselect: (...itemIds: string[]) => void
 
-  importToOutline: (outlineApiToken: string) => void
+  importToOutline: (outlineApiToken: string, itemIds: string[]) => void
   confirmImport: () => void
   cancelImport: () => void
+
+  openLink: (url: string) => void
 }
 
 export type IItemStatuses = Record<string, IItemStatus>
@@ -92,3 +93,5 @@ export interface IImportLog {
   level: 'success' | 'error' | 'info'
   message: string
 }
+
+export type IDocFilters = Partial<ICodaDoc>
