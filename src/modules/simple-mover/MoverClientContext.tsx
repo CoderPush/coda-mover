@@ -21,6 +21,8 @@ interface IMoverClientContextValue {
   importToOutline: IClient['importToOutline']
   confirmImport: IClient['confirmImport']
   cancelImport: IClient['cancelImport']
+
+  openLink: IClient['openLink']
 }
 
 // Create the MoverClientContext
@@ -83,6 +85,7 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     importToOutline: (outlineApiToken: string) => mover?.importToOutline(outlineApiToken),
     confirmImport: () => mover?.confirmImport(),
     cancelImport: () => mover?.cancelImport(),
+    openLink: (url) => mover?.openLink(url),
   }
 
   return (

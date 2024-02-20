@@ -13,6 +13,8 @@ export const CLIENT_CONFIRM_IMPORT = 'confirm import'
 export const SERVER_SAVE_ITEMS = 'save items'
 export const SERVER_LOAD_ITEMS = 'load items'
 
+export const CLIENT_OPEN_LINK = 'client open link'
+
 export const ITEM_STATUS_PENDING = 'pending'
 export const ITEM_STATUS_LISTING = 'listing'
 export const ITEM_STATUS_EXPORTING = 'exporting'

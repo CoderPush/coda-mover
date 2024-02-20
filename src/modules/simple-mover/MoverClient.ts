@@ -3,6 +3,7 @@ import {
   CLIENT_CONFIRM_IMPORT,
   CLIENT_IMPORT_OUTLINE,
   CLIENT_LIST_DOCS,
+  CLIENT_OPEN_LINK,
   CLIENT_REJECT_IMPORT,
   ITEM_STATUS_CANCELLED,
   ITEM_STATUS_CONFIRMING,
@@ -137,6 +138,10 @@ export class MoverClient implements IClient {
   deselect (...itemIds: string[]) {
     this.selectedItemIds = this.selectedItemIds.filter(id => !itemIds.includes(id))
     this.handlers.onSelectionChange?.([...this.selectedItemIds])
+  }
+
+  openLink (url: string) {
+    this.socket.emit(CLIENT_OPEN_LINK, url)
   }
 
   private reportImportProgress () {

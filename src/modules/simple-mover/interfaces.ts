@@ -62,6 +62,7 @@ export interface IServer {
 
   handleClientListDocs: () => void
   handleClientImportOutline: () => void
+  handleClientOpenLink: () => void
 }
 
 export interface IClient {
@@ -74,6 +75,8 @@ export interface IClient {
   importToOutline: (outlineApiToken: string) => void
   confirmImport: () => void
   cancelImport: () => void
+
+  openLink: (url: string) => void
 }
 
 export type IItemStatuses = Record<string, IItemStatus>

@@ -19,7 +19,7 @@ export interface ICodaDoc {
   browserLink: string
   ownerName: string
   ownerEmail: string
-  folderName: string
+  folderName?: string
   folderBrowserLink: string
   treePath: string // typical / means based at root
   filePath?: string
