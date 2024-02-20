@@ -7,7 +7,7 @@ export interface ICodaDocTableItemProps extends React.HTMLAttributes<HTMLTableRo
 }
 
 export function CodaDocTableItem ({ className, data, ...props }: ICodaDocTableItemProps) {
-  const { openLink, selectedItemIds, deselect, select } = useClient()
+  const { openLink, selectedItemIds, deselect, select, selectOnly } = useClient()
   const isSelected = selectedItemIds.includes(data.id)
 
   return (
@@ -40,7 +40,7 @@ export function CodaDocTableItem ({ className, data, ...props }: ICodaDocTableIt
       </td>
       <td>{data.ownerName}</td>
       <td>
-        <OutlinePushBtn variant='icon' />
+        <OutlinePushBtn variant='icon' onClick={() => selectOnly(data.id)} />
       </td>
     </tr>
   )

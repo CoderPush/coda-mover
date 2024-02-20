@@ -23,7 +23,7 @@ export function OutlineDocPusher () {
         <div className='flex items-center gap-1 p-4 shadow-[0_3px_10px_rgb(0,0,0,0.2)]'>
           <h5 className='grow m-0'>
             <span className='text-indigo-500 mr-1 font-medium'>{selectedItemIds.length}</span>
-            items selected
+            {selectedItemIds.length > 1 ? 'items' : 'item'} selected
           </h5>
 
           <OutlinePushBtn />

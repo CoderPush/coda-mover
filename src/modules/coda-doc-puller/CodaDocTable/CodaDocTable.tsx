@@ -7,21 +7,30 @@ import { CodaDocTableFilterField } from './CodaDocTableFilterField'
 export interface ICodaDocTableProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function CodaDocTable ({ className, ...props }: ICodaDocTableProps) {
-  const { items } = useClient()
+  const { items, isSelectedAll, deselectAll, selectAll } = useClient()
 
   return (
-    <div {...props} className={classNames('flex w-full overflow-x-auto', className)}>
+    <div {...props} className={classNames('flex flex-col w-full overflow-x-auto', !items.length && 'hidden', className)}>
       <table className='table table-compact table--scrollbody'>
         <thead className='shadow-sm'>
           <tr className='table__headers'>
-            <th className='table-col--checkbox' />
-            <th>Name</th>
-            <th className='w-10'>Folder</th>
-            <th className='w-10'>Owner</th>
+            <th className='w-8'>
+              <input
+                type='checkbox'
+                className='checkbox'
+                checked={isSelectedAll}
+                onChange={() => isSelectedAll ? deselectAll() : selectAll()}
+              />
+            </th>
+            <th className='min-w-24'>Name</th>
+            <th className='w-10 min-w-24'>Folder</th>
+            <th className='w-10 min-w-24'>Owner</th>
             <th className='w-6' />
           </tr>
           <tr className='table__filters'>
-            <th />
+            <th className='!text-center' title={`Found ${items.length} docs`}>
+              <span className='border-none text-indigo-300'>{items.length}</span>
+            </th>
             <th>
               <CodaDocTableFilterField name='name' />
             </th>

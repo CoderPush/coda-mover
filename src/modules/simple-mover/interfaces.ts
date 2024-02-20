@@ -69,10 +69,8 @@ export interface IClient {
   listDocs: (codaApiToken: string) => void
 
   handleServerResponses: () => void
-  select: (...itemIds: string[]) => void
-  deselect: (...itemIds: string[]) => void
 
-  importToOutline: (outlineApiToken: string) => void
+  importToOutline: (outlineApiToken: string, itemIds: string[]) => void
   confirmImport: () => void
   cancelImport: () => void
 

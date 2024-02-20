@@ -31,7 +31,6 @@ declare const envs: {
 
 export class MoverClient implements IClient {
   private items: Record<string, ICodaItem> = {}
-  private selectedItemIds: string[] = []
   private itemStatuses: IItemStatuses = {}
 
   readonly socket: Socket
@@ -53,7 +52,7 @@ export class MoverClient implements IClient {
     this.socket.emit(CLIENT_LIST_DOCS, codaApiToken)
   }
 
-  importToOutline (outlineApiToken: string) {
+  importToOutline (outlineApiToken: string, itemIds: string[]) {
     this.setItemStatus({ id: CLIENT_IMPORT_OUTLINE, status: ITEM_STATUS_PENDING })
     this.handlers.onImportIssues?.([])
     this.clearImportProgress()
@@ -61,7 +60,7 @@ export class MoverClient implements IClient {
     this.socket.emit(
       CLIENT_IMPORT_OUTLINE,
       outlineApiToken,
-      this.selectedItemIds.map(id => this.items[id]).filter(Boolean),
+      itemIds.map(id => this.items[id]).filter(Boolean),
     )
   }
 
@@ -130,16 +129,6 @@ export class MoverClient implements IClient {
     }
   }
 
-  select (...itemIds: string[]) {
-    this.selectUnqueuedItems(itemIds)
-    this.handlers.onSelectionChange?.([...this.selectedItemIds])
-  }
-
-  deselect (...itemIds: string[]) {
-    this.selectedItemIds = this.selectedItemIds.filter(id => !itemIds.includes(id))
-    this.handlers.onSelectionChange?.([...this.selectedItemIds])
-  }
-
   openLink (url: string) {
     this.socket.emit(CLIENT_OPEN_LINK, url)
   }
@@ -174,17 +163,5 @@ export class MoverClient implements IClient {
     }, {})
 
     this.reportImportProgress()
-  }
-
-  private selectUnqueuedItems (itemIds: string[]) {
-    const selectedItemIds = [...this.selectedItemIds]
-
-    itemIds.forEach(id => {
-      if (!selectedItemIds.includes(id)) {
-        selectedItemIds.push(id)
-      }
-    })
-
-    this.selectedItemIds = selectedItemIds
   }
 }
