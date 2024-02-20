@@ -93,3 +93,5 @@ export interface IImportLog {
   level: 'success' | 'error' | 'info'
   message: string
 }
+
+export type IDocFilters = Partial<ICodaDoc>

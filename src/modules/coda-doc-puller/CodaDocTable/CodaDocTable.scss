@@ -33,3 +33,11 @@
     }
   }
 }
+
+.table-col--text {
+  min-width: 6rem;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

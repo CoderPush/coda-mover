@@ -7,11 +7,12 @@ export interface ICodaDocTableItemProps extends React.HTMLAttributes<HTMLTableRo
 }
 
 export function CodaDocTableItem ({ className, data, ...props }: ICodaDocTableItemProps) {
-  const { openLink, selectedItemIds, deselect, select, selectOnly } = useClient()
+  const { openLink, selectedItemIds, deselect, select, selectOnly, hiddenItemIds } = useClient()
   const isSelected = selectedItemIds.includes(data.id)
+  const isHidden = hiddenItemIds.includes(data.id)
 
   return (
-    <tr {...props} className={classNames('hover:bg-slate-50', className)}>
+    <tr {...props} className={classNames('hover:bg-slate-50', isHidden && 'hidden', className)}>
       <th>
         <input
           type='checkbox'
@@ -20,7 +21,7 @@ export function CodaDocTableItem ({ className, data, ...props }: ICodaDocTableIt
           onChange={() => isSelected ? deselect(data.id) : select(data.id)}
         />
       </th>
-      <td>
+      <td className='table-col--text'>
         <a
           onClick={() => openLink(data.browserLink)}
           href='#'
@@ -29,7 +30,7 @@ export function CodaDocTableItem ({ className, data, ...props }: ICodaDocTableIt
           {data.name}
         </a>
       </td>
-      <td>
+      <td className='table-col--text'>
         {data.folderName && (
           <a
             onClick={() => openLink(data.folderBrowserLink)}
@@ -38,7 +39,7 @@ export function CodaDocTableItem ({ className, data, ...props }: ICodaDocTableIt
           >{data.folderName}
           </a>)}
       </td>
-      <td>{data.ownerName}</td>
+      <td className='table-col--text'>{data.ownerName}</td>
       <td>
         <OutlinePushBtn variant='icon' onClick={() => selectOnly(data.id)} />
       </td>

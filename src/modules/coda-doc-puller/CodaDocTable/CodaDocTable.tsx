@@ -22,9 +22,9 @@ export function CodaDocTable ({ className, ...props }: ICodaDocTableProps) {
                 onChange={() => isSelectedAll ? deselectAll() : selectAll()}
               />
             </th>
-            <th className='min-w-24'>Name</th>
-            <th className='w-10 min-w-24'>Folder</th>
-            <th className='w-10 min-w-24'>Owner</th>
+            <th className='table-col--text'>Name</th>
+            <th className='w-10 table-col--text'>Folder</th>
+            <th className='w-10 table-col--text'>Owner</th>
             <th className='w-6' />
           </tr>
           <tr className='table__filters'>
@@ -35,10 +35,10 @@ export function CodaDocTable ({ className, ...props }: ICodaDocTableProps) {
               <CodaDocTableFilterField name='name' />
             </th>
             <th>
-              <CodaDocTableFilterField name='folder' />
+              <CodaDocTableFilterField name='folderName' />
             </th>
             <th>
-              <CodaDocTableFilterField name='owner' />
+              <CodaDocTableFilterField name='ownerName' />
             </th>
             <th />
           </tr>
