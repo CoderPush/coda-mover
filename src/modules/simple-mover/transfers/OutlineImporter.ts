@@ -96,7 +96,7 @@ export class OutlineImporter implements IImporter {
 
   async confirmImport () {
     try {
-      const selectedDocs = this.selectedItems.filter(item => item.treePath === '/')
+      const selectedDocs = this.selectedItems.filter(item => item.treePath === '/') as ICodaDoc[]
       if (!selectedDocs.length) throw Error('No docs selected for import')
 
       this.setStatus(CLIENT_IMPORT_OUTLINE, ITEM_STATUS_IMPORTING)
@@ -287,7 +287,7 @@ export class OutlineImporter implements IImporter {
     if (isDoc) {
       this.tasks.add({
         id: item.id,
-        execute: async () => await this.importDoc(item),
+        execute: async () => await this.importDoc(item as ICodaDoc),
         priority: TaskPriority.LOW,
       })
     } else {

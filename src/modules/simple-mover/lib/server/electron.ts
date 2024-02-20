@@ -1,6 +1,6 @@
 // Interact with electron
 
-import { shell } from 'electron'
+import { shell, app } from 'electron'
 import * as log from 'electron-log'
 
 /**
@@ -13,3 +13,4 @@ export const openLink = async (url: string) => {
 }
 
 export { log }
+export const userDataPath = app.getPath('userData')
