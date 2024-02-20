@@ -1,6 +1,6 @@
-import { resolve } from 'path'
+import { resolve } from 'app-root-path'
 
-export const rootPath = resolve(__dirname, '../../../../')
+export const rootPath = resolve('./')
   .replace(/\\/g, '/') // fix path separator for windows
 export const dataPath = `${rootPath}/data`
 

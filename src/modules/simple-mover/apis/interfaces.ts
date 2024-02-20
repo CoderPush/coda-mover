@@ -1,12 +1,26 @@
 export interface ICodaApiDoc {
   id: string
   name: string
+  browserLink: string
+  ownerName: string
+  owner: string // email address
+  folder: {
+    id: string
+    browserLink: string
+    name?: string
+  }
+  createdAt: string // ISO string
   updatedAt: string // ISO string
 }
 
 export interface ICodaDoc {
   id: string
   name: string
+  browserLink: string
+  ownerName: string
+  ownerEmail: string
+  folderName: string
+  folderBrowserLink: string
   treePath: string // typical / means based at root
   filePath?: string
   syncedAt?: string // ISO string

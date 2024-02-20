@@ -111,11 +111,16 @@ export class Mover implements IMover {
 
   private receiveDocs (apiDocs: ICodaApiDoc[]) {
     const docs = apiDocs.map(apiDoc => {
-      const doc = {
+      const doc: ICodaDoc = {
         ...this._items[apiDoc.id],
         id: apiDoc.id,
         name: apiDoc.name,
         treePath: '/',
+        browserLink: apiDoc.browserLink,
+        ownerName: apiDoc.ownerName,
+        ownerEmail: apiDoc.owner,
+        folderName: apiDoc.folder.name || '',
+        folderBrowserLink: apiDoc.folder.browserLink,
       }
 
       this._items[doc.id] = doc
