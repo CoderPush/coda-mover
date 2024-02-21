@@ -1,5 +1,14 @@
 # coda-mover
 
+## 2.1.3
+
+### Patch Changes
+
++ Add checked items filter (cc2be54)
++ Datatable for docs (423ec27)
+  - Filtering and quick selection
+  - Additionally, fix app logs and data path for zip build
+
 ## 2.1.2
 
 ### Patch Changes
@@ -23,7 +32,7 @@
 
 ### Patch Changes
 
-+ b3d4518: Outline importer:
+- b3d4518: Outline importer:
   - Outline pusher and APIs for importing synced docs, pages into Outline
   - UI for selecting docs and pages, importing form
   - Enhancement for item listing UI
@@ -32,7 +41,7 @@
 
 ### Patch Changes
 
-+ Puller flow:
+- Puller flow:
   - List docs and pages from Coda APIs and save to filesystem (data folder)
   - Pages are exported as html so they can be imported to Outline APIs later
   - Communicate between UI and background tasks through Websocket
