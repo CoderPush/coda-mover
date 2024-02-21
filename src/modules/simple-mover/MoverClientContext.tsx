@@ -1,5 +1,5 @@
 import React, { type ReactNode, createContext, useContext, useState, useEffect } from 'react'
-import type { IItemStatus, ICodaItem, IClient, IItemStatuses, IImportLog, IDocFilters, ICodaDoc } from './interfaces'
+import type { IItemStatus, ICodaItem, IClient, IItemStatuses, IImportLog, IDocFilters, ICodaDoc, IDocCustomFilterFn, IDocCustomFilters } from './interfaces'
 import { MoverClient } from './MoverClient'
 import { CLIENT_IMPORT_OUTLINE, CLIENT_LIST_DOCS, ITEM_STATUS_DONE, ITEM_STATUS_ERROR } from './events'
 import { getHiddenDocIds } from './lib/client'
@@ -11,6 +11,7 @@ interface IMoverClientContextValue {
   itemStatuses: Record<ICodaItem['id'], IItemStatus>
   isConnected: boolean
   isListingDocs: boolean
+  isListingDone: boolean
   listDocs: IClient['listDocs']
 
   select: (...itemIds: string[]) => void
@@ -33,8 +34,10 @@ interface IMoverClientContextValue {
   // let UI decide on show or hide items instead of update item list
   // to reduce DOM update cost
   hiddenItemIds: string[]
-  filterBy: (key: keyof IDocFilters, value: string) => void
+  filterBy: (key: keyof ICodaDoc, value: string) => void
   clearFilterBy: (key: keyof IDocFilters) => void
+  filterWith: (customFilterName: string, filterFn: IDocCustomFilterFn) => void
+  clearFilterWith: (customFilterName: string) => void
   clearFilters: () => void
 }
 
@@ -62,17 +65,19 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
   const [importIssues, setImportIssues] = useState<string[]>([])
   const [importLogs, setImportLogs] = useState<IImportLog[]>([])
   const [filters, setFilters] = useState<IDocFilters>({})
+  const [customFilters, setCustomFilters] = useState<IDocCustomFilters>({})
 
   const isListingDocs = itemStatuses[CLIENT_LIST_DOCS] && (
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_DONE &&
     itemStatuses[CLIENT_LIST_DOCS].status !== ITEM_STATUS_ERROR
   )
+  const isListingDone = itemStatuses[CLIENT_LIST_DOCS]?.status === ITEM_STATUS_DONE
   const currentImportStatus = itemStatuses[CLIENT_IMPORT_OUTLINE]
   const itemIds = items.map(item => item.id)
   const isSelectedAll = isUserSelectedAll ||
     (itemIds.length > 0 && userSelectedItemIds.length >= itemIds.length)
   const selectedItemIds = isSelectedAll ? itemIds : userSelectedItemIds
-  const hiddenItemIds = getHiddenDocIds(items as ICodaDoc[], filters)
+  const hiddenItemIds = getHiddenDocIds(items as ICodaDoc[], filters, ...Object.values(customFilters))
 
   useEffect(() => {
     if (mover) return
@@ -97,6 +102,7 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     itemStatuses,
     isConnected,
     isListingDocs,
+    isListingDone,
     currentImportStatus,
     importIssues,
     importLogs,
@@ -134,9 +140,19 @@ export function MoverClientProvider ({ children }: { children: ReactNode }) {
     },
     clearFilterBy (key) {
       setFilters(filters => {
-        const { [key]: _, ...other } = filters
+        const { [key]: _, ...others } = filters
 
-        return other
+        return others
+      })
+    },
+    filterWith (customFilterName, filterFn) {
+      setCustomFilters(customFilters => ({ ...customFilters, [customFilterName]: filterFn }))
+    },
+    clearFilterWith (customFilterName) {
+      setCustomFilters(customFilters => {
+        const { [customFilterName]: _, ...others } = customFilters
+
+        return others
       })
     },
     clearFilters () {

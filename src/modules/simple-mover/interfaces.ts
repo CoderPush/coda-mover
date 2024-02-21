@@ -95,3 +95,5 @@ export interface IImportLog {
 }
 
 export type IDocFilters = Partial<ICodaDoc>
+export type IDocCustomFilterFn = (doc: ICodaDoc) => boolean
+export type IDocCustomFilters = Record<string, IDocCustomFilterFn>

@@ -7,11 +7,21 @@ import { CodaDocTableFilterField } from './CodaDocTableFilterField'
 export interface ICodaDocTableProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function CodaDocTable ({ className, ...props }: ICodaDocTableProps) {
-  const { items, isSelectedAll, deselectAll, selectAll } = useClient()
+  const { items, isSelectedAll, deselectAll, selectAll, isListingDone } = useClient()
+  const isHidden = !isListingDone
+  const isNoItems = !items.length
 
   return (
-    <div {...props} className={classNames('flex flex-col w-full overflow-x-auto', !items.length && 'hidden', className)}>
-      <table className='table table-compact table--scrollbody'>
+    <div
+      {...props}
+      className={classNames(
+        'flex flex-col w-full overflow-x-auto',
+        isHidden && 'hidden',
+        className
+      )}
+    >
+      {isNoItems && (<p className='text-zinc-400'>No docs found :(</p>)}
+      <table className={classNames('table table-compact table--scrollbody', isNoItems && 'hidden')}>
         <thead className='shadow-sm'>
           <tr className='table__headers'>
             <th className='w-8'>
