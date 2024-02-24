@@ -7,6 +7,7 @@ import type {
   IOutlineSearchDocumentResult,
   IOutlineDocumentUpdateInput,
   IOutlineDocumentCreateInput,
+  IOutlineDocumentMoveInput,
 } from './interfaces'
 import { createReadStream, pathExists } from 'fs-extra'
 import FormData from 'form-data'
@@ -96,5 +97,9 @@ export class OutlineApis implements IOutlineApis {
     const { data } = await this.apis.post('/collections.documents', { id: collectionId })
 
     return data.data
+  }
+
+  async moveDocument (input: IOutlineDocumentMoveInput) {
+    await this.apis.post('/documents.move', input)
   }
 }
