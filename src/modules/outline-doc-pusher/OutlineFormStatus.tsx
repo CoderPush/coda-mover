@@ -7,14 +7,15 @@ import {
 } from '@/modules/simple-mover/client'
 
 export function OutlineFormStatus ({ isMissingApiToken }: { isMissingApiToken: boolean }) {
-  const { currentImportStatus, importIssues } = useClient()
+  const { currentImportStatus, importIssues, importLogs } = useClient()
   const isError = currentImportStatus?.status === ITEM_STATUS_ERROR
   const isValidating = currentImportStatus?.status === ITEM_STATUS_VALIDATING
-  const isValidatedWithoutIssues = currentImportStatus?.status === ITEM_STATUS_CONFIRMING &&
-    importIssues.length === 0
-  const isValidatedWithIssues = currentImportStatus?.status === ITEM_STATUS_CONFIRMING &&
-    importIssues.length > 0
+  const isValidated = currentImportStatus?.status === ITEM_STATUS_CONFIRMING
+  const isValidatedWithoutIssues = isValidated && importIssues.length === 0
+  const isValidatedWithIssues = isValidated && importIssues.length > 0
   const isDone = currentImportStatus?.status === ITEM_STATUS_DONE
+  const isDoneWithIssues = isDone && importLogs.some(log => log.level === 'error')
+  const isDoneWithoutIssues = isDone && !isDoneWithIssues
 
   return (
     <div className='text-sm outline-form__status'>
@@ -50,10 +51,16 @@ export function OutlineFormStatus ({ isMissingApiToken }: { isMissingApiToken: b
           Please carefully review following issues and click confirm to proceed:
         </p>
       )}
-      {isDone && (
+      {isDoneWithoutIssues && (
         <p className='leading-snug flex gap-2 text-sm text-success'>
           <span className='badge badge-success w-4 h-4 text-[0.5rem] p-1 mt-0.5'>✓</span>
           Done
+        </p>
+      )}
+      {isDoneWithIssues && (
+        <p className='leading-snug flex gap-2 text-sm'>
+          <span className='badge bg-black text-white w-4 h-4 text-[0.5rem] p-1 mt-0.5'>✓</span>
+          Done with issues
         </p>
       )}
     </div>

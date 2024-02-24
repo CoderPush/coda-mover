@@ -255,15 +255,17 @@ export class Mover implements IMover {
   }
 
   setStatus (id: string, status: IStatus, message?: string) {
-    const itemStatus = { id, status, message }
+    const itemId = id.replace('import::', '')
+    const itemName = this.items[itemId]?.name
+    const itemStatus: IItemStatus = { id, status, message, name: itemName }
 
     this._itemStatuses[id] = itemStatus
     if (status === ITEM_STATUS_ERROR) {
-      log.error(`[mover] ${id}`, status, message)
+      log.error(`[mover] ${id} ${itemName}`, status, message)
     } else if (message) {
-      log.info(`[mover] ${id}`, status, message)
+      log.info(`[mover] ${id} ${itemName}`, status, message)
     } else {
-      log.info(`[mover] ${id}`, status)
+      log.info(`[mover] ${id} ${itemName}`, status)
     }
 
     /**

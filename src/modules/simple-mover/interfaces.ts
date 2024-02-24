@@ -19,6 +19,7 @@ export interface IImporter {
   collectDocumentTree: (collectionId: string) => Promise<void>
   createAndPublishDocIfNotExists: (doc: ICodaDoc) => Promise<IOutlineDocument>
   archiveOutdatedPage: (outlineId: string) => Promise<void>
+  validatePageFileSize: (page: ICodaPage) => Promise<void>
   importPageWithHtml: (page: ICodaPage, parentDocumentId: string) => Promise<IOutlineDocument>
 
   stopPendingImports: () => void
@@ -53,6 +54,7 @@ export type IStatusUpdateHandler = (itemStatus: IItemStatus) => void
 
 export interface IItemStatus {
   id: string
+  name?: string
   status: IStatus
   message?: string
 }
@@ -90,6 +92,7 @@ export interface IClientHandlers {
 
 export interface IImportLog {
   id: string
+  name?: string
   level: 'success' | 'error' | 'info'
   message: string
 }
