@@ -9,14 +9,20 @@ export function OutlineFormLogs () {
   if (!isVisible) return null
 
   return (
-    <div
+    <ul
       className={classNames(
         'outline-form__logs pl-2 pr-4 overflow-y-auto',
         !isVisible && 'hidden',
       )}
     >
       {importLogs.map(log => (
-        <p key={log.id} className='leading-snug flex gap-1 text-xs'>
+        <li
+          key={log.id}
+          className={classNames(
+            'leading-snug flex flex-wrap gap-x-1 gap-y-0.5 text-xs',
+            log.level === 'error' && 'text-error',
+          )}
+        >
           <span
             className={classNames(
               'w-4 h-4 text-center mr-1',
@@ -29,9 +35,17 @@ export function OutlineFormLogs () {
             {log.level === 'error' && '!'}
             {log.level === 'info' && '»'}
           </span>
-          {log.message}
-        </p>
+          {log.name && (<h5 className='font-medium grow basis-3/4 truncate'>{log.name}</h5>)}
+          <p
+            className={classNames(
+              'mt-0 leading-snug truncate',
+              log.name && 'ml-6 text-zinc-500'
+            )}
+          >
+            {log.message.replace(/,.+/, '').replace(log.name!, '')}
+          </p>
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }
