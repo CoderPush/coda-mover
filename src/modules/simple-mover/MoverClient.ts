@@ -144,9 +144,10 @@ export class MoverClient implements IClient {
       if (isImportLog && isTrackedStatus && message) {
         return {
           id: item.id,
+          name: item.name,
           level: item.status === ITEM_STATUS_ERROR ? 'error' : 'success',
           message,
-        }
+        } satisfies IImportLog
       }
 
       return null

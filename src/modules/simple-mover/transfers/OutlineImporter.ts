@@ -26,6 +26,7 @@ import type {
 } from '../interfaces'
 import { isAxiosError } from 'axios'
 import { trimSlashes } from '../lib'
+import { stat } from 'fs-extra'
 
 const DEFAULT_COLLECTION_NAME = 'Coda'
 
@@ -39,14 +40,10 @@ export class OutlineImporter implements IImporter {
       }
 
       this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
+      this.checkDoneStatus()
     },
     onItemDone: () => {
-      if (
-        this.tasks.pendingCount + this.tasks.runningCount <= 1 &&
-        this.waitingExports.length === 0
-      ) {
-        this.setStatus(CLIENT_IMPORT_OUTLINE, ITEM_STATUS_DONE)
-      }
+      this.checkDoneStatus()
     },
   })
 
@@ -216,6 +213,8 @@ export class OutlineImporter implements IImporter {
     }
 
     if (isPageOutOfSync) {
+      await this.validatePageFileSize(page)
+
       importedPage = await this.importPageWithHtml(page, outlineParentId)
     }
 
@@ -259,6 +258,17 @@ export class OutlineImporter implements IImporter {
     await this.apis.archiveDocument(outlineId)
   }
 
+  async validatePageFileSize (page: ICodaPage) {
+    const stats = await stat(page.filePath!)
+    const fileSizeInBytes = stats.size
+    // convert to MB, keep 2 decimal places
+    const fileSizeInMB = Math.floor(fileSizeInBytes / 1024 / 1024 * 100) / 100
+
+    if (fileSizeInMB > 1.45) {
+      throw new Error('Should be manually imported, file size limit exceeded')
+    }
+  }
+
   async importPageWithHtml (page: ICodaPage, parentDocumentId: string) {
     let importedPage = await this.apis.importDocumentByFile(this.collectionId!, page.filePath!, parentDocumentId)
 
@@ -273,6 +283,15 @@ export class OutlineImporter implements IImporter {
     const itemId = id === CLIENT_IMPORT_OUTLINE ? id : `import::${id}`
 
     this.mover.setStatus(itemId, status, message)
+  }
+
+  private checkDoneStatus () {
+    if (
+      this.tasks.pendingCount + this.tasks.runningCount <= 1 &&
+      this.waitingExports.length === 0
+    ) {
+      this.setStatus(CLIENT_IMPORT_OUTLINE, ITEM_STATUS_DONE)
+    }
   }
 
   stopPendingImports () {
