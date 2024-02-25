@@ -117,6 +117,7 @@ export interface IOutlineItem {
   id: string
   name: string
   treePath: string
+  index?: number // index of sub document under parent document
 }
 
 export interface IOutlineApis {
