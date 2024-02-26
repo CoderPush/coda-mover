@@ -23,7 +23,7 @@ module.exports = {
     'no-unused-vars': 'warn',
     'no-var': 'error',
     'consistent-return': 'off',
-    complexity: ['warn', { max: 30 }],
+    complexity: ['warn', { max: 15 }],
     'padding-line-between-statements': [
       'error',
       { blankLine: 'always', prev: 'let', next: '*' },

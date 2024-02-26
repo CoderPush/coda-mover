@@ -15,8 +15,6 @@ export const SERVER_LOAD_ITEMS = 'load items'
 
 export const CLIENT_OPEN_LINK = 'client open link'
 
-export const ITEM_IMAGES_STATUS = 'images'
-
 export const ITEM_STATUS_PENDING = 'pending'
 export const ITEM_STATUS_LISTING = 'listing'
 export const ITEM_STATUS_EXPORTING = 'exporting'
@@ -32,9 +30,11 @@ export const ITEM_STATUS_ARCHIVING = 'archiving'
 export const ITEM_STATUS_RETRYING = 'retrying'
 export const ITEM_STATUS_CANCELLED = 'cancelled'
 
-export const ItemStatuses = [
-  ITEM_IMAGES_STATUS,
+export const ITEM_STATUS_FETCHING_IMAGES = 'fetching images'
+export const ITEM_STATUS_DOWNLOADING_IMAGES = 'downloading images'
+export const ITEM_STATUS_REPLACING_IMAGES = 'replacing images'
 
+export const ItemStatuses = [
   ITEM_STATUS_PENDING,
   ITEM_STATUS_LISTING,
   ITEM_STATUS_EXPORTING,
@@ -49,4 +49,7 @@ export const ItemStatuses = [
   ITEM_STATUS_CONFIRMING,
   ITEM_STATUS_CANCELLED,
   ITEM_STATUS_RETRYING,
+  ITEM_STATUS_FETCHING_IMAGES,
+  ITEM_STATUS_DOWNLOADING_IMAGES,
+  ITEM_STATUS_REPLACING_IMAGES,
 ] as const
