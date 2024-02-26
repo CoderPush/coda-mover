@@ -24,7 +24,7 @@ import type {
   IStatus,
 } from '../interfaces'
 import { isAxiosError } from 'axios'
-import { trimSlashes } from '../lib'
+import { trimSlashes, waitForMsAsync } from '../lib'
 import { stat } from 'fs-extra'
 
 const DEFAULT_COLLECTION_NAME = 'Coda'
@@ -36,19 +36,23 @@ export class OutlineImporter implements IImporter {
     onItemError: (item, error) => {
       const isRequestError = isAxiosError(error)
       const isRequestError429 = isRequestError && error.response?.status === 429
-      const isRequestError503 = true // isRequestError && error.response?.status === 503
+      const isRequestError503 = isRequestError && error.response?.status === 503
       const serviceUnavailableRetryCount = this.serviceUnavailableRetries[item.id!] || 0
       const shouldRetryOn503Error = isRequestError503 && serviceUnavailableRetryCount < MAX_SERVICE_UNAVAILABLE_RETRIES
       const shouldRetry = isRequestError429 || shouldRetryOn503Error
 
       if (isRequestError429) {
+        this.shouldDelayImport = true
         this.setStatus(item.id!, ITEM_STATUS_RETRYING, 'Retrying, rate limit exceeded')
       } else if (shouldRetryOn503Error) {
+        this.shouldDelayImport = true
         this.setStatus(
           item.id!, ITEM_STATUS_RETRYING,
           `Retrying (${serviceUnavailableRetryCount + 1}), service unavailable`
         )
         this.serviceUnavailableRetries[item.id!] = serviceUnavailableRetryCount + 1
+      } else {
+        this.shouldDelayImport = false
       }
 
       if (shouldRetry) {
@@ -62,6 +66,7 @@ export class OutlineImporter implements IImporter {
       this.checkDoneStatus()
     },
     onItemDone: () => {
+      this.shouldDelayImport = false
       this.checkDoneStatus()
     },
   })
@@ -73,6 +78,7 @@ export class OutlineImporter implements IImporter {
   private readonly codaOrderingIndexes: Record<string, number> = {}
   // item id => number of retries on 503 error service unavailable
   private readonly serviceUnavailableRetries: Record<string, number> = {}
+  private shouldDelayImport = false
 
   constructor (
     private readonly mover: IMover,
@@ -171,6 +177,8 @@ export class OutlineImporter implements IImporter {
   }
 
   private async importDoc (doc: ICodaDoc) {
+    if (this.shouldDelayImport) await waitForMsAsync(1000)
+
     const outlineTreePath = '/'
     if (this.mover.itemStatuses[doc.id]?.status === ITEM_STATUS_LISTING) {
       this.setStatus(doc.id, ITEM_STATUS_WAITING, `Waiting for listing ${doc.name}`)
@@ -213,6 +221,8 @@ export class OutlineImporter implements IImporter {
   }
 
   private async importPage (page: ICodaPage, outlineTreePath = '/') {
+    if (this.shouldDelayImport) await waitForMsAsync(1000)
+
     if (this.mover.itemStatuses[page.id]?.status !== ITEM_STATUS_DONE) {
       this.setStatus(page.id, ITEM_STATUS_WAITING, `Waiting for syncing ${page.name}`)
       this.waitingExports.push({ id: page.id, outlineTreePath })
