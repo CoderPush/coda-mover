@@ -1,14 +1,12 @@
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import {
   CLIENT_IMPORT_OUTLINE,
-  ITEM_STATUS_ARCHIVING,
   ITEM_STATUS_CONFIRMING,
   ITEM_STATUS_DONE,
   ITEM_STATUS_ERROR,
   ITEM_STATUS_IMPORTING,
   ITEM_STATUS_LISTING,
   ITEM_STATUS_PENDING,
-  ITEM_STATUS_SKIPPED,
   ITEM_STATUS_VALIDATING,
   ITEM_STATUS_WAITING,
 } from '../events'
@@ -50,6 +48,8 @@ export class OutlineImporter implements IImporter {
   private collectionId: string | undefined
   private documentTreeItems: IOutlineItem[] = []
   private waitingExports: Array<{ id: string, outlineTreePath: string }> = []
+  // coda id => corresponding outline index (for ordering)
+  private readonly codaOrderingIndexes: Record<string, number> = {}
 
   constructor (
     private readonly mover: IMover,
@@ -136,8 +136,13 @@ export class OutlineImporter implements IImporter {
   private receiveDocumentTreeItems (items: IOutlineDocumentTreeItem[], parentPath = '/') {
     if (!items.length) return
 
-    items.forEach(item => {
-      this.documentTreeItems.push({ id: item.id, name: item.title, treePath: parentPath })
+    items.forEach((item, idx) => {
+      this.documentTreeItems.push({
+        id: item.id,
+        name: item.title,
+        treePath: parentPath,
+        index: idx,
+      })
       this.receiveDocumentTreeItems(item.children, `${parentPath}${item.id}/`)
     })
   }
@@ -169,13 +174,11 @@ export class OutlineImporter implements IImporter {
       this.documentTreeItems.push(docTreeItem)
     }
 
-    const innerCodaTreePath = `${doc.treePath}${doc.id}/`
     const innerOutlineTreePath = `${outlineTreePath}${docTreeItem.id}/`
-    const innerPages = Object.values(this.mover.items).filter(item => (
-      item.treePath === innerCodaTreePath
-    ))
+    const innerPages = this.mover.getInnerPages(doc)
 
-    innerPages.forEach(innerPage => {
+    innerPages.forEach((innerPage, index) => {
+      this.codaOrderingIndexes[innerPage.id] = index
       this.setStatus(innerPage.id, ITEM_STATUS_PENDING)
       this.tasks.add({
         id: innerPage.id,
@@ -220,13 +223,15 @@ export class OutlineImporter implements IImporter {
 
     if (!importedPage) throw Error('Failed to import page')
 
-    const innerCodaTreePath = `${page.treePath}${page.id}/`
+    const outlineId = importedPage.id
     const innerOutlineTreePath = `${outlineTreePath}${importedPage.id}/`
-    const innerPages = Object.values(this.mover.items).filter(item => (
-      item.treePath === innerCodaTreePath
-    ))
+    const shouldArchiveOutdatedPage = docTreeItem && isPageOutOfSync
+    const orderingIndex = this.codaOrderingIndexes[page.id]
+    const shouldFixDocumentOrder = orderingIndex !== undefined && docTreeItem?.index !== orderingIndex
+    const innerPages = this.mover.getInnerPages(page)
 
-    innerPages.forEach(innerPage => {
+    innerPages.forEach((innerPage, index) => {
+      this.codaOrderingIndexes[innerPage.id] = index
       this.setStatus(innerPage.id, ITEM_STATUS_PENDING)
       this.tasks.add({
         id: innerPage.id,
@@ -234,16 +239,10 @@ export class OutlineImporter implements IImporter {
       })
     })
 
-    if (docTreeItem && isPageOutOfSync) {
-      this.setStatus(page.id, ITEM_STATUS_ARCHIVING, `Archiving outdated page ${page.name}`)
-      await this.archiveOutdatedPage(docTreeItem.id)
-    }
+    if (shouldArchiveOutdatedPage) this.queueArchivingOutdatedPage(page.id, docTreeItem.id)
+    if (shouldFixDocumentOrder) this.queueFixingDocumentOrder(page.id, outlineId, outlineParentId, orderingIndex)
 
-    if (isPageOutOfSync) {
-      this.setStatus(page.id, ITEM_STATUS_DONE, `Imported ${page.name}`)
-    } else {
-      this.setStatus(page.id, ITEM_STATUS_SKIPPED, `Skipped ${page.name}`)
-    }
+    this.setStatus(page.id, ITEM_STATUS_DONE, isPageOutOfSync ? `Imported ${page.name}` : `Skipped ${page.name}`)
   }
 
   async createAndPublishDocIfNotExists (doc: ICodaDoc) {
@@ -252,6 +251,19 @@ export class OutlineImporter implements IImporter {
       collectionId: this.collectionId,
       publish: true,
     })
+  }
+
+  private queueArchivingOutdatedPage (pageId: string, outlineId: string) {
+    this.tasks.add({
+      id: `archive::${pageId}`,
+      priority: TaskPriority.IDLE,
+      execute: async () => {
+        await this.archiveOutdatedPage(outlineId)
+        this.setStatus(`archive::${pageId}`, ITEM_STATUS_DONE)
+      },
+    })
+
+    this.tasks.next()
   }
 
   async archiveOutdatedPage (outlineId: string) {
@@ -277,6 +289,30 @@ export class OutlineImporter implements IImporter {
     }
 
     return importedPage
+  }
+
+  private queueFixingDocumentOrder (
+    pageId: string,
+    documentId: string,
+    parentDocumentId: string,
+    orderingIndex: number,
+  ) {
+    this.tasks.add({
+      id: `order::${pageId}`,
+      priority: TaskPriority.IDLE,
+      execute: async () => {
+        await this.apis.moveDocument({
+          id: documentId,
+          collectionId: this.collectionId!,
+          parentDocumentId,
+          index: orderingIndex,
+        })
+
+        this.setStatus(`order::${pageId}`, ITEM_STATUS_DONE)
+      },
+    })
+
+    this.tasks.next()
   }
 
   private setStatus (id: string, status: IStatus, message?: string) {

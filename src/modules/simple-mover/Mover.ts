@@ -255,17 +255,17 @@ export class Mover implements IMover {
   }
 
   setStatus (id: string, status: IStatus, message?: string) {
-    const itemId = id.replace('import::', '')
-    const itemName = this.items[itemId]?.name
+    const itemId = id.replace(/^.+::/, '') // remove prefixes
+    const itemName = this.items[itemId]?.name || ''
     const itemStatus: IItemStatus = { id, status, message, name: itemName }
 
     this._itemStatuses[id] = itemStatus
     if (status === ITEM_STATUS_ERROR) {
-      log.error(`[mover] ${id} ${itemName}`, status, message)
+      log.error(`[mover] ${id} ${itemName}`, `[${status}]`, message)
     } else if (message) {
-      log.info(`[mover] ${id} ${itemName}`, status, message)
+      log.info(`[mover] ${id} ${itemName}`, `[${status}]`, message)
     } else {
-      log.info(`[mover] ${id} ${itemName}`, status)
+      log.info(`[mover] ${id} ${itemName}`, `[${status}]`)
     }
 
     /**
@@ -290,6 +290,14 @@ export class Mover implements IMover {
 
   getStatus (id: string) {
     return this._itemStatuses[id].status || ''
+  }
+
+  getInnerPages (item: ICodaItem) {
+    const innerCodaTreePath = `${item.treePath}${item.id}/`
+
+    return Object.values(this.items).filter(page => (
+      page.treePath === innerCodaTreePath
+    ))
   }
 
   private cancelExports () {

@@ -48,6 +48,8 @@ export interface IMover {
 
   saveItems: () => Promise<void>
   dispose: () => void
+
+  getInnerPages: (item: ICodaItem) => ICodaPage[]
 }
 
 export type IStatusUpdateHandler = (itemStatus: IItemStatus) => void

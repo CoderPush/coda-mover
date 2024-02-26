@@ -100,6 +100,13 @@ export interface IOutlineDocumentUpdateInput {
   title?: string
 }
 
+export interface IOutlineDocumentMoveInput {
+  id: string
+  collectionId: string
+  index: number
+  parentDocumentId?: string
+}
+
 export interface IOutlineDocumentTreeItem {
   id: string
   title: string
@@ -110,6 +117,7 @@ export interface IOutlineItem {
   id: string
   name: string
   treePath: string
+  index?: number // index of sub document under parent document
 }
 
 export interface IOutlineApis {
@@ -122,4 +130,5 @@ export interface IOutlineApis {
   importDocumentByFile: (collectionId: string, filePath: string, parentDocumentId?: string) => Promise<IOutlineDocument>
   updateDocument: (document: IOutlineDocumentUpdateInput) => Promise<IOutlineDocument>
   getCollectionTree: (collectionId: string) => Promise<IOutlineDocumentTreeItem[]>
+  moveDocument: (input: IOutlineDocumentMoveInput) => Promise<void>
 }
