@@ -1,10 +1,10 @@
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { isAxiosError } from 'axios'
 import type { ICodaApis, ICodaPage, IMover, IExporter, IStatus } from '../interfaces'
-import { createWriteStream, ensureDir } from 'fs-extra'
+import { createWriteStream, ensureDir, readFile, writeFile } from 'fs-extra'
 import { getCurrentIsoDateTime, getParentDir, trimSlashes } from '../lib'
 import { download } from '../apis'
-import { ITEM_STATUS_DONE, ITEM_STATUS_DOWNLOADING, ITEM_STATUS_ERROR, ITEM_STATUS_EXPORTING, ITEM_STATUS_PENDING, SERVER_SAVE_ITEMS } from '../events'
+import { ITEM_IMAGES_STATUS, ITEM_STATUS_DONE, ITEM_STATUS_DOWNLOADING, ITEM_STATUS_ERROR, ITEM_STATUS_EXPORTING, ITEM_STATUS_PENDING, SERVER_SAVE_ITEMS } from '../events'
 
 export class CodaExporter implements IExporter {
   private importChunkCounter = 0
@@ -16,6 +16,8 @@ export class CodaExporter implements IExporter {
         this.tasks.add({ ...item, priority: TaskPriority.LOW })
         this.tasks.next()
       }
+
+      console.log(error)
 
       this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
     },
@@ -53,11 +55,11 @@ export class CodaExporter implements IExporter {
     if (!docId) throw Error('invalid page tree path')
 
     const parentDir = getParentDir(page, this.items)
-    const pageFilePath = `${parentDir}/${page.name.replace(/\//g, ' ')}.html`
+    const pageFilePath = `${parentDir}/${page.name.replace(/\//g, ' ')}.md`
 
     if (!exportId) {
       this.setStatus(page.id, ITEM_STATUS_EXPORTING)
-      const exportRes = await this.apis.exportPage(docId, page.id)
+      const exportRes = await this.apis.exportPage(docId, page.id, 'markdown')
 
       exportId = exportRes.id
     }
@@ -86,7 +88,81 @@ export class CodaExporter implements IExporter {
     }))
 
     this.items[page.id].filePath = pageFilePath
-    this.setStatus(page.id, ITEM_STATUS_DONE)
+
+    const fileContent = await readFile(pageFilePath, 'utf8')
+
+    if ((/^\n\n|\n\n\n/g).test(fileContent)) {
+      console.log(`${page.name} might have images`)
+      await this.updateMarkdownFile(docId, pageFilePath, page)
+    }
+
+    this.setStatus(page.name, ITEM_STATUS_DONE)
+  }
+
+  private async updateMarkdownFile (docId: string, pageMarkdownFilePath: string, page: ICodaPage, exportId?: string) {
+    const parentDir = getParentDir(page, this.items)
+    const pageFilePath = `${parentDir}/${page.name.replace(/\//g, ' ')}.html`
+
+    if (!exportId) {
+      this.setStatus(page.id, ITEM_IMAGES_STATUS, ITEM_STATUS_EXPORTING)
+
+      const exportRes = await this.apis.exportPage(docId, page.id, 'html')
+
+      exportId = exportRes.id
+    }
+
+    if (!exportId) throw Error('export isn\'t requested')
+
+    const pageExport = await this.apis.getPageExport(docId, page.id, exportId)
+
+    if (!pageExport.downloadLink) { // retry later at low priority
+      this.tasks.add({
+        id: page.id,
+        execute: async () => await this.updateMarkdownFile(docId, pageMarkdownFilePath, page, exportId),
+        priority: TaskPriority.LOW,
+      })
+
+      return
+    }
+
+    this.setStatus(page.id, ITEM_IMAGES_STATUS, ITEM_STATUS_DOWNLOADING)
+    await download(pageExport.downloadLink, createWriteStream(pageFilePath, {
+      flags: 'w',
+      encoding: 'utf8',
+    }))
+
+    const htmlFileContent = await readFile(pageFilePath, 'utf8')
+
+    const imageLinks: string[] = []
+    const imgTags = htmlFileContent.match(/<img[^>]+src="([^">]+)"/g)
+
+    if (imgTags) {
+      imgTags.forEach(imgTag => {
+        const src = imgTag.match(/src="([^"]+)"/)?.[1]
+        const alt = imgTag.match(/alt="([^"]*)"/)?.[1]
+
+        imageLinks.push(`![${alt}](${src})`)
+      })
+    }
+
+    if (!imageLinks?.length) return
+
+    let markdownFileContent = await readFile(pageMarkdownFilePath, 'utf8')
+    let imageLinkIndex = -1
+
+    markdownFileContent = markdownFileContent.replace(/^\n\n|\n\n\n/g, () => {
+      imageLinkIndex += 1
+
+      return `\n${imageLinks[imageLinkIndex]}\n`
+    })
+
+    if (imageLinkIndex < imageLinks.length) {
+      markdownFileContent += imageLinks.slice(imageLinkIndex).join('\n')
+    }
+
+    await writeFile(pageMarkdownFilePath, markdownFileContent, 'utf8')
+
+    this.setStatus(page.id, ITEM_IMAGES_STATUS, ITEM_STATUS_DONE)
   }
 
   stopPendingExports () {

@@ -15,6 +15,8 @@ export const SERVER_LOAD_ITEMS = 'load items'
 
 export const CLIENT_OPEN_LINK = 'client open link'
 
+export const ITEM_IMAGES_STATUS = 'images'
+
 export const ITEM_STATUS_PENDING = 'pending'
 export const ITEM_STATUS_LISTING = 'listing'
 export const ITEM_STATUS_EXPORTING = 'exporting'
@@ -31,6 +33,8 @@ export const ITEM_STATUS_RETRYING = 'retrying'
 export const ITEM_STATUS_CANCELLED = 'cancelled'
 
 export const ItemStatuses = [
+  ITEM_IMAGES_STATUS,
+
   ITEM_STATUS_PENDING,
   ITEM_STATUS_LISTING,
   ITEM_STATUS_EXPORTING,
