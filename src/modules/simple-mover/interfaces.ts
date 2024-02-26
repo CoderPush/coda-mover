@@ -92,10 +92,12 @@ export interface IClientHandlers {
   onImportLogs?: (logs: IImportLog[]) => void
 }
 
+export type IImportLogLevel = 'success' | 'error' | 'info'
+
 export interface IImportLog {
   id: string
   name?: string
-  level: 'success' | 'error' | 'info'
+  level: IImportLogLevel
   message: string
 }
 

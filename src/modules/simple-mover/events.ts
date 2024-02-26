@@ -27,6 +27,7 @@ export const ITEM_STATUS_IMPORTING = 'importing'
 export const ITEM_STATUS_WAITING = 'waiting'
 export const ITEM_STATUS_SKIPPED = 'skipped'
 export const ITEM_STATUS_ARCHIVING = 'archiving'
+export const ITEM_STATUS_RETRYING = 'retrying'
 export const ITEM_STATUS_CANCELLED = 'cancelled'
 
 export const ItemStatuses = [
@@ -43,4 +44,5 @@ export const ItemStatuses = [
   ITEM_STATUS_ARCHIVING,
   ITEM_STATUS_CONFIRMING,
   ITEM_STATUS_CANCELLED,
+  ITEM_STATUS_RETRYING,
 ] as const

@@ -10,6 +10,7 @@ import {
   ITEM_STATUS_DONE,
   ITEM_STATUS_ERROR,
   ITEM_STATUS_PENDING,
+  ITEM_STATUS_RETRYING,
   ITEM_STATUS_SKIPPED,
   SERVER_IMPORT_RETURN_ISSUES,
   SERVER_RETURN_DOCS,
@@ -23,6 +24,7 @@ import type {
   IItemStatus,
   IItemStatuses,
   IImportLog,
+  IImportLogLevel,
 } from './interfaces'
 
 declare const envs: {
@@ -136,16 +138,25 @@ export class MoverClient implements IClient {
   private reportImportProgress () {
     const importLogs = Object.values(this.itemStatuses).map(item => {
       const isImportLog = item.id.startsWith('import::')
-      const isTrackedStatus = item.status === ITEM_STATUS_ERROR ||
-        item.status === ITEM_STATUS_DONE ||
+      const isStatusSuccess = item.status === ITEM_STATUS_DONE ||
         item.status === ITEM_STATUS_SKIPPED
+      const isStatusError = item.status === ITEM_STATUS_ERROR
+      const isStatusRetrying = item.status === ITEM_STATUS_RETRYING
+      const isTrackedStatus = isStatusError || isStatusSuccess || isStatusRetrying
       const message = item.message
+      let logLevel: IImportLogLevel = 'error'
+
+      if (isStatusRetrying) {
+        logLevel = 'info'
+      } else if (!isStatusError) {
+        logLevel = 'success'
+      }
 
       if (isImportLog && isTrackedStatus && message) {
         return {
           id: item.id,
           name: item.name,
-          level: item.status === ITEM_STATUS_ERROR ? 'error' : 'success',
+          level: logLevel,
           message,
         } satisfies IImportLog
       }

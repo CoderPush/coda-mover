@@ -35,3 +35,9 @@ export const getParentDir = (item: ICodaItem, items: Record<string, ICodaItem>) 
 
   return `${codaDocsPath}/${parentDirSubPath}`
 }
+
+export const waitForMsAsync = async (milliseconds: number) => {
+  log.info('[wait]', milliseconds, 'ms')
+
+  return await new Promise(resolve => setTimeout(resolve, milliseconds))
+}
