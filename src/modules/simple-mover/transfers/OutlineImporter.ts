@@ -7,6 +7,7 @@ import {
   ITEM_STATUS_IMPORTING,
   ITEM_STATUS_LISTING,
   ITEM_STATUS_PENDING,
+  ITEM_STATUS_RETRYING,
   ITEM_STATUS_VALIDATING,
   ITEM_STATUS_WAITING,
 } from '../events'
@@ -32,9 +33,15 @@ export class OutlineImporter implements IImporter {
   private readonly tasks = new TaskEmitter({
     concurrency: 1,
     onItemError: (item, error) => {
-      if (isAxiosError(error)) {
+      const isRequestError = isAxiosError(error)
+      const isRequestError429 = isRequestError && error.response?.status === 429
+
+      if (isRequestError429) {
+        this.setStatus(item.id!, ITEM_STATUS_RETRYING, 'Retrying, rate limit exceeded')
         this.tasks.add({ ...item, priority: TaskPriority.LOW })
         this.tasks.next()
+
+        return
       }
 
       this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
