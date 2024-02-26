@@ -28,6 +28,7 @@ import { trimSlashes } from '../lib'
 import { stat } from 'fs-extra'
 
 const DEFAULT_COLLECTION_NAME = 'Coda'
+const MAX_SERVICE_UNAVAILABLE_RETRIES = 3
 
 export class OutlineImporter implements IImporter {
   private readonly tasks = new TaskEmitter({
@@ -35,16 +36,29 @@ export class OutlineImporter implements IImporter {
     onItemError: (item, error) => {
       const isRequestError = isAxiosError(error)
       const isRequestError429 = isRequestError && error.response?.status === 429
+      const isRequestError503 = true // isRequestError && error.response?.status === 503
+      const serviceUnavailableRetryCount = this.serviceUnavailableRetries[item.id!] || 0
+      const shouldRetryOn503Error = isRequestError503 && serviceUnavailableRetryCount < MAX_SERVICE_UNAVAILABLE_RETRIES
+      const shouldRetry = isRequestError429 || shouldRetryOn503Error
 
       if (isRequestError429) {
         this.setStatus(item.id!, ITEM_STATUS_RETRYING, 'Retrying, rate limit exceeded')
+      } else if (shouldRetryOn503Error) {
+        this.setStatus(
+          item.id!, ITEM_STATUS_RETRYING,
+          `Retrying (${serviceUnavailableRetryCount + 1}), service unavailable`
+        )
+        this.serviceUnavailableRetries[item.id!] = serviceUnavailableRetryCount + 1
+      }
+
+      if (shouldRetry) {
         this.tasks.add({ ...item, priority: TaskPriority.LOW })
         this.tasks.next()
 
         return
       }
 
-      this.setStatus(item.id!, ITEM_STATUS_ERROR, error.message)
+      this.setStatus(item.id!, ITEM_STATUS_ERROR, `Should import manually, ${error.message}`)
       this.checkDoneStatus()
     },
     onItemDone: () => {
@@ -57,6 +71,8 @@ export class OutlineImporter implements IImporter {
   private waitingExports: Array<{ id: string, outlineTreePath: string }> = []
   // coda id => corresponding outline index (for ordering)
   private readonly codaOrderingIndexes: Record<string, number> = {}
+  // item id => number of retries on 503 error service unavailable
+  private readonly serviceUnavailableRetries: Record<string, number> = {}
 
   constructor (
     private readonly mover: IMover,
