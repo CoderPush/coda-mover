@@ -137,6 +137,12 @@ export class Mover implements IMover {
 
     this.setStatus(docId, ITEM_STATUS_PENDING)
 
+    // when doc is marked for listing or re-listing,
+    // its current inner pages should be also marked as stale (pending for revalidation) as well
+    this.getInnerPages(doc).forEach(page => {
+      this.itemStatuses[page.id] = { id: page.id, status: ITEM_STATUS_PENDING }
+    })
+
     this.tasks.add({
       id: `list:${docId}`,
       execute: async () => {

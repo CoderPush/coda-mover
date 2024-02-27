@@ -17,7 +17,8 @@ import {
 } from '../events'
 import { dirname } from 'path'
 
-const CODA_IMAGE_REPLACEMENT_REGEX = /^\n{2}|\n{3}/g
+const CODA_IMAGE_REPLACEMENT_START_REGEX = /^\n{2}/
+const CODA_IMAGE_REPLACEMENT_BODY_REGEX = /\n{4}/g
 
 export class CodaExporter implements IExporter {
   private importChunkCounter = 0
@@ -70,16 +71,22 @@ export class CodaExporter implements IExporter {
 
     if (!exportId) exportId = await this.exportPageAsMarkdown(docId, page)
     if (!exportId) throw Error('markdown export isn\'t requested')
-    if (!imageExportId) await this.downloadMarkdownExport(docId, page, pageFilePath, exportId)
+    if (!imageExportId) {
+      const isMarkdownDownloaded = await this.downloadMarkdownExport(docId, page, pageFilePath, exportId)
+      if (!isMarkdownDownloaded) {
+        return
+      }
+    }
 
     const markdownContent = await readFile(pageFilePath, 'utf8')
-    const shouldAddImages = CODA_IMAGE_REPLACEMENT_REGEX.test(markdownContent)
+    const shouldAddImages = CODA_IMAGE_REPLACEMENT_START_REGEX.test(markdownContent) ||
+      CODA_IMAGE_REPLACEMENT_BODY_REGEX.test(markdownContent)
 
     if (shouldAddImages) {
       if (!imageExportId) imageExportId = await this.exportPageAsHtml(docId, page)
       if (!imageExportId) throw Error('html images export isn\'t requested')
 
-      await this.downloadImageExportAndReplaceInMarkdown(
+      const isImageReplaced = await this.downloadImageExportAndReplaceInMarkdown(
         docId,
         page,
         pageFilePath,
@@ -87,6 +94,9 @@ export class CodaExporter implements IExporter {
         exportId,
         imageExportId,
       )
+      if (!isImageReplaced) {
+        return
+      }
     }
 
     this.setStatus(page.id, ITEM_STATUS_DONE)
@@ -115,7 +125,7 @@ export class CodaExporter implements IExporter {
         priority: TaskPriority.LOW,
       })
 
-      return
+      return false
     }
 
     this.setStatus(page.id, ITEM_STATUS_DOWNLOADING)
@@ -128,6 +138,8 @@ export class CodaExporter implements IExporter {
     }))
 
     this.items[page.id].filePath = pageFilePath
+
+    return true
   }
 
   private async exportPageAsHtml (docId: string, page: ICodaPage) {
@@ -157,7 +169,7 @@ export class CodaExporter implements IExporter {
         priority: TaskPriority.LOW,
       })
 
-      return
+      return false
     }
 
     await download(htmlExport.downloadLink, createWriteStream(htmlFilePath, {
@@ -167,30 +179,41 @@ export class CodaExporter implements IExporter {
 
     this.setStatus(page.id, ITEM_STATUS_REPLACING_IMAGES)
     const htmlContent = await readFile(htmlFilePath, 'utf8')
-    const imageBlocks: string[] = []
-    const imgTags = htmlContent.match(/<img[^>]+src="([^">]+)"/g)
+    const replacedBlocks: string[] = []
+    // img and hr tags are rendered as 3 empty lines or 2 empty lines at start
+    const replacedHtmlTags = htmlContent.match(/<img[^>]+src="[^">]+"|<hr/g)
 
-    if (imgTags) {
-      imgTags.forEach(imgTag => {
-        const src = imgTag.match(/src="([^"]+)"/)?.[1]
-        const alt = imgTag.match(/alt="([^"]*)"/)?.[1]
+    replacedHtmlTags?.forEach(tag => {
+      if (!tag.startsWith('<img')) { // not image tag, ignored
+        return replacedBlocks.push('\n')
+      }
 
-        imageBlocks.push(`![${alt}](${src})`)
-      })
-    }
+      const src = tag.match(/src="([^"]*)"/)?.[1]
+      const alt = tag.match(/alt="([^"]*)"/)?.[1]
 
-    let replacedImageCount = 0
-    let markdownContentWithImages = markdownContent.replace(CODA_IMAGE_REPLACEMENT_REGEX, emptyLines => {
-      return imageBlocks[replacedImageCount]
-        ? `\n\n${imageBlocks[replacedImageCount++]}\n\n`
-        : emptyLines // restored empty lines if no images found from html export
+      replacedBlocks.push(`![${alt}](${src})`)
     })
 
-    if (replacedImageCount < imageBlocks.length) {
-      markdownContentWithImages += imageBlocks.slice(replacedImageCount).join('\n')
+    let replacementCount = 0
+    let markdownContentWithImages = markdownContent.replace(CODA_IMAGE_REPLACEMENT_START_REGEX, emptyLines => {
+      return replacedBlocks[replacementCount]
+        ? `${replacedBlocks[replacementCount++]}\n\n`
+        : emptyLines // restore empty lines if replacement not found from html export
+    })
+
+    markdownContentWithImages = markdownContentWithImages.replace(CODA_IMAGE_REPLACEMENT_BODY_REGEX, emptyLines => {
+      return replacedBlocks[replacementCount]
+        ? `\n\n${replacedBlocks[replacementCount++]}\n\n`
+        : emptyLines // restore empty lines if replacement not found from html export
+    })
+
+    if (replacementCount < replacedBlocks.length) {
+      markdownContentWithImages += replacedBlocks.slice(replacementCount).join('\n\n')
     }
 
     await writeFile(pageFilePath, markdownContentWithImages, 'utf8')
+
+    return true
   }
 
   stopPendingExports () {
