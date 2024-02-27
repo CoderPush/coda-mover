@@ -9,6 +9,17 @@ Coda contents migration made simple
 
 <img width="912" alt="image" src="https://github.com/CoderPush/coda-mover/assets/13363340/2d59e452-5dcb-4bc6-a028-0e1a2910c9b6">
 
+Installation
+-----
+
+Please find download links on our [Releases](https://github.com/CoderPush/coda-mover/releases) page. Pick your desired installation:
+
+- `mac.zip` links for MacOS build as zip file
+- `dmg` links for MacOS builds as commonly used Apple disk image format
+
+> For MacOS users, the application can be opened with:
+> right-click > Open > Open
+
 Development
 -----
 ### Prerequisites

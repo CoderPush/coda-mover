@@ -1,11 +1,20 @@
 # coda-mover
 
+## 2.1.4
+
+### Patch Changes
+
+- a175790: Validate max page file size for outline import (1.45MB)
+- 95458c9: Use markdown as main import format, with images collected from html export
+- e4adc19: More meaningful indications to users with Outline errors
+- fb091fe: Fix order of sub docs on Outline after imports
+
 ## 2.1.3
 
 ### Patch Changes
 
-+ Add checked items filter (cc2be54)
-+ Datatable for docs (423ec27)
+- Add checked items filter (cc2be54)
+- Datatable for docs (423ec27)
   - Filtering and quick selection
   - Additionally, fix app logs and data path for zip build
 
