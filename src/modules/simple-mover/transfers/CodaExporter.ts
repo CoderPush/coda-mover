@@ -123,7 +123,7 @@ export class CodaExporter implements IExporter {
     if (!this.outlineApis) throw Error('No outline token')
 
     const mentions = markdownContent.match(CODA_MENTION_REPLACEMENT_REGEX)
-    if (!mentions?.length) return
+    if (!mentions) return
 
     const emailsSet = new Set<string>(mentions.map(mention => {
       const email = mention.match(/(?<=mailto:)[^)]+/)
