@@ -125,13 +125,11 @@ export class CodaExporter implements IExporter {
     const mentions = markdownContent.match(CODA_MENTION_REPLACEMENT_REGEX)
     if (!mentions) return
 
-    const emailsSet = new Set<string>(mentions.map(mention => {
-      const email = mention.match(/(?<=mailto:)[^)]+/)
+    const emails = mentions.map((mention) => {
+      const matched = mention.match(/mailto:([^)]+)/)
 
-      return email ? email[0] : ''
-    }))
-
-    const emails: string[] = [...emailsSet]
+      return matched ? matched[1] : ''
+    })
 
     const users = await this.outlineApis.listUsers({ emails })
     const replacedMentions: string[] = []
