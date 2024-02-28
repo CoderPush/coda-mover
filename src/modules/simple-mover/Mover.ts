@@ -11,6 +11,7 @@ import type {
   IExporter,
   ICodaDoc,
   IImporter,
+  IOutlineApis,
 } from './interfaces'
 import { codaDocsPath, itemsJsonPath, log } from './lib'
 import {
@@ -56,6 +57,8 @@ export class Mover implements IMover {
   constructor (
     private readonly server: IServer,
     private readonly codaApis: ICodaApis,
+    private outlineApis?: IOutlineApis
+
   ) {}
 
   get items (): Record<string, ICodaItem> {
@@ -67,7 +70,7 @@ export class Mover implements IMover {
   }
 
   get exporter (): IExporter {
-    if (!this._exporter) this._exporter = new CodaExporter(this, this.codaApis)
+    if (!this._exporter) this._exporter = new CodaExporter(this, this.codaApis, this.outlineApis)
 
     return this._exporter
   }
@@ -211,9 +214,11 @@ export class Mover implements IMover {
       this.listPages(doc.id)
     })
 
+    this.outlineApis = new OutlineApis(outlineApiToken)
+
     this._importer = new OutlineImporter(
       this,
-      new OutlineApis(outlineApiToken),
+      this.outlineApis,
       docs,
     )
 

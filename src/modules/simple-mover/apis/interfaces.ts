@@ -120,6 +120,23 @@ export interface IOutlineItem {
   index?: number // index of sub document under parent document
 }
 
+export interface IOutlineUser {
+  id: string
+  name: string
+  avatarUrl: string
+  color: string
+  isAdmin: boolean
+  isSuspended: boolean
+  isViewer: boolean
+  createdAt: string
+  updatedAt: string
+  lastActiveAt: string
+}
+
+export interface IOutlineListUsersInput {
+  emails: string[]
+}
+
 export interface IOutlineApis {
   listCollections: (offset?: number) => Promise<IOutlineCollection[]>
   searchDocuments: (collectionId: string, query: string) => Promise<IOutlineDocument[]>
@@ -131,4 +148,5 @@ export interface IOutlineApis {
   updateDocument: (document: IOutlineDocumentUpdateInput) => Promise<IOutlineDocument>
   getCollectionTree: (collectionId: string) => Promise<IOutlineDocumentTreeItem[]>
   moveDocument: (input: IOutlineDocumentMoveInput) => Promise<void>
+  listUsers: (input: IOutlineListUsersInput) => Promise<IOutlineUser[]>
 }

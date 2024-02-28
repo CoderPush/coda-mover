@@ -34,6 +34,9 @@ export const ITEM_STATUS_FETCHING_IMAGES = 'fetching images'
 export const ITEM_STATUS_DOWNLOADING_IMAGES = 'downloading images'
 export const ITEM_STATUS_REPLACING_IMAGES = 'replacing images'
 
+export const ITEM_STATUS_FETCHING_USERS = 'fetching users'
+export const ITEM_STATUS_REPLACING_MENTIONS = 'replacing mentions'
+
 export const ItemStatuses = [
   ITEM_STATUS_PENDING,
   ITEM_STATUS_LISTING,
@@ -52,4 +55,6 @@ export const ItemStatuses = [
   ITEM_STATUS_FETCHING_IMAGES,
   ITEM_STATUS_DOWNLOADING_IMAGES,
   ITEM_STATUS_REPLACING_IMAGES,
+  ITEM_STATUS_FETCHING_USERS,
+  ITEM_STATUS_REPLACING_MENTIONS,
 ] as const
