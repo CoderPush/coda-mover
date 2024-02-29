@@ -1,7 +1,7 @@
 {
   "name": "coda-mover",
   "description": "Coda contents migration made simple",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "private": true,
   "scripts": {
     "dev": "tsup --env.ELECTRON_IS_DEV=1 && electron dist/electron",

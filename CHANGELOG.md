@@ -1,5 +1,11 @@
 # coda-mover
 
+## 2.1.5
+
+### Patch Changes
+
+- Convert @mention tags from Coda to Outline format
+
 ## 2.1.4
 
 ### Patch Changes
