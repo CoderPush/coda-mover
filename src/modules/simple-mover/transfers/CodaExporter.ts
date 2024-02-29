@@ -146,7 +146,7 @@ export class CodaExporter implements IExporter {
       const parts = user.avatarUrl.split('/')
       const avatarId = parts[parts.length - 1]
 
-      replacedMentions.push(`@[${name}](mention://${user?.id}/user/${avatarId})`)
+      replacedMentions.push(`@[${name}](mention://${avatarId}/user/${user?.id})`)
     })
 
     let replacementCount = 0
