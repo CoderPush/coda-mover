@@ -8,7 +8,10 @@ const resolvePath = (...paths: string[]): string =>
 let envName: string
 const createBuildConfigs = async (name: string): Promise<Options[]> => {
   const basePath = `${__dirname}/${name}`.replace(/\\/g, '/') // eslint-disable-line n/no-path-concat
-  const jsBanner = '/*! Copyright (c) 2023 Coderpush. All rights reserved. */'
+  const jsBanner = `/*!
+ * Copyright (c) 2023 CoderPush. All rights reserved.
+ * Licensed under the MIT License. See LICENSE file in the project root for license information.
+ */`
 
   const configs: Options[] = []
   const packageMain = 'index.ts'

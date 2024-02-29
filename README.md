@@ -3,6 +3,7 @@ Coda Mover
 
 ![build][badge-build]
 ![ts](https://badgen.net/badge/-/TypeScript/blue?icon=typescript&label)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![changelog][badge-changelog]](/CHANGELOG.md)
 
 Coda contents migration made simple
