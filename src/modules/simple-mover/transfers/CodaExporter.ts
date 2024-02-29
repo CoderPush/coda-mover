@@ -126,37 +126,40 @@ export class CodaExporter implements IExporter {
     if (!mentions) return
 
     const emails = mentions.map((mention) => {
-      const email = mention.match(/mailto:([^)]+)/)
-
-      return email ? email[1] : ''
-    })
+      return mention.match(/mailto:([^)]+)/)?.[1] || ''
+    }).filter(Boolean) // remove empty values
 
     const users = await this.outlineApis.listUsers({ emails })
     const replacedMentions: string[] = []
 
     this.setStatus(page.id, ITEM_STATUS_REPLACING_MENTIONS)
-    mentions.forEach((mention) => {
+    mentions.forEach((mention, idx) => {
       const name = mention.match(/\[(.*?)\]/)?.[1]
       const email = mention.match(/mailto:([^)]+)/)?.[1]
 
       const user = users.find((user) => user.email ? user.email === email : user.name === name)
 
-      if (!user) return
+      if (!user) {
+        replacedMentions.push(mention) // keep original mention if user not found
 
-      const parts = user.avatarUrl.split('/')
-      const avatarId = parts[parts.length - 1]
+        return
+      }
 
-      replacedMentions.push(`@[${name}](mention://${avatarId}/user/${user?.id})`)
+      // this should be randomized instead but it just works for now
+      const idxStr = idx.toString()
+      const mentionUniqueId = user.id.slice(0, user.id.length - idxStr.length) + idx
+
+      replacedMentions.push(`@[${name}](mention://${mentionUniqueId}/user/${user?.id})`)
     })
 
     let replacementCount = 0
-    const markdownContentWithMentioned = markdownContent.replace(CODA_MENTION_REPLACEMENT_REGEX, matched => {
+    const markdownContentWithMentions = markdownContent.replace(CODA_MENTION_REPLACEMENT_REGEX, mention => {
       return replacedMentions[replacementCount]
         ? `${replacedMentions[replacementCount++]}`
-        : matched
+        : mention
     })
 
-    await writeFile(pageFilePath, markdownContentWithMentioned, 'utf8')
+    if (replacementCount > 0) await writeFile(pageFilePath, markdownContentWithMentions, 'utf8')
 
     return true
   }
