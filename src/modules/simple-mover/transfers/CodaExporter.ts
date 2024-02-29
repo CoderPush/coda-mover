@@ -126,19 +126,20 @@ export class CodaExporter implements IExporter {
     if (!mentions) return
 
     const emails = mentions.map((mention) => {
-      const matched = mention.match(/mailto:([^)]+)/)
+      const email = mention.match(/mailto:([^)]+)/)
 
-      return matched ? matched[1] : ''
+      return email ? email[1] : ''
     })
 
     const users = await this.outlineApis.listUsers({ emails })
     const replacedMentions: string[] = []
 
     this.setStatus(page.id, ITEM_STATUS_REPLACING_MENTIONS)
-    mentions.forEach((mentioned) => {
-      const matched = mentioned.match(/\[(.*?)\]/)
-      const name = matched?.[1]
-      const user = users.find((user) => user.name === name)
+    mentions.forEach((mention) => {
+      const name = mention.match(/\[(.*?)\]/)?.[1]
+      const email = mention.match(/mailto:([^)]+)/)?.[1]
+
+      const user = users.find((user) => user.email ? user.email === email : user.name === name)
 
       if (!user) return
 

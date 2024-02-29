@@ -131,6 +131,10 @@ export interface IOutlineUser {
   createdAt: string
   updatedAt: string
   lastActiveAt: string
+  email?: string
+  language?: string
+  preferences: any
+  notificationSettings: any
 }
 
 export interface IOutlineListUsersInput {
