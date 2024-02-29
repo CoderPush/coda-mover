@@ -1,6 +1,6 @@
 import { TaskEmitter, TaskPriority } from '@abxvn/tasks'
 import { isAxiosError } from 'axios'
-import type { ICodaApis, ICodaPage, IMover, IExporter, IStatus } from '../interfaces'
+import type { ICodaApis, ICodaPage, IMover, IExporter, IStatus, IOutlineApis } from '../interfaces'
 import { createWriteStream, ensureDir, readFile, writeFile } from 'fs-extra'
 import { getCurrentIsoDateTime, getParentDir, trimSlashes } from '../lib'
 import { download } from '../apis'
@@ -14,11 +14,14 @@ import {
   ITEM_STATUS_FETCHING_IMAGES,
   ITEM_STATUS_REPLACING_IMAGES,
   ITEM_STATUS_DOWNLOADING_IMAGES,
+  ITEM_STATUS_FETCHING_USERS,
+  ITEM_STATUS_REPLACING_MENTIONS,
 } from '../events'
 import { dirname } from 'path'
 
 const CODA_IMAGE_REPLACEMENT_START_REGEX = /^\n{2}/
 const CODA_IMAGE_REPLACEMENT_BODY_REGEX = /\n{4}/g
+const CODA_MENTION_REPLACEMENT_REGEX = /\[[^\]]+\]\(mailto:[^)]+\)/g
 
 export class CodaExporter implements IExporter {
   private importChunkCounter = 0
@@ -51,7 +54,8 @@ export class CodaExporter implements IExporter {
 
   constructor (
     private readonly mover: IMover,
-    private readonly apis: ICodaApis
+    private readonly apis: ICodaApis,
+    private readonly outlineApis?: IOutlineApis
   ) {}
 
   queuePageExport (page: ICodaPage) {
@@ -73,6 +77,7 @@ export class CodaExporter implements IExporter {
     if (!exportId) throw Error('markdown export isn\'t requested')
     if (!imageExportId) {
       const isMarkdownDownloaded = await this.downloadMarkdownExport(docId, page, pageFilePath, exportId)
+
       if (!isMarkdownDownloaded) {
         return
       }
@@ -81,6 +86,7 @@ export class CodaExporter implements IExporter {
     const markdownContent = await readFile(pageFilePath, 'utf8')
     const shouldAddImages = CODA_IMAGE_REPLACEMENT_START_REGEX.test(markdownContent) ||
       CODA_IMAGE_REPLACEMENT_BODY_REGEX.test(markdownContent)
+    const shouldReplaceMentions = CODA_MENTION_REPLACEMENT_REGEX.test(markdownContent)
 
     if (shouldAddImages) {
       if (!imageExportId) imageExportId = await this.exportPageAsHtml(docId, page)
@@ -94,12 +100,68 @@ export class CodaExporter implements IExporter {
         exportId,
         imageExportId,
       )
+
       if (!isImageReplaced) {
         return
       }
     }
 
+    if (shouldReplaceMentions) {
+      const markdownContentWithImages = await readFile(pageFilePath, 'utf8')
+      const isMentionReplaces = await this.fetchingUsersAndReplaceInMarkdown(page, pageFilePath, markdownContentWithImages)
+
+      if (!isMentionReplaces) {
+        return
+      }
+    }
+
     this.setStatus(page.id, ITEM_STATUS_DONE)
+  }
+
+  private async fetchingUsersAndReplaceInMarkdown (page: ICodaPage, pageFilePath: string, markdownContent: string) {
+    this.setStatus(page.id, ITEM_STATUS_FETCHING_USERS)
+    if (!this.outlineApis) throw Error('No outline token')
+
+    const mentions = markdownContent.match(CODA_MENTION_REPLACEMENT_REGEX)
+    if (!mentions) return
+
+    const emails = mentions.map((mention) => {
+      return mention.match(/mailto:([^)]+)/)?.[1] || ''
+    }).filter(Boolean) // remove empty values
+
+    const users = await this.outlineApis.listUsers({ emails })
+    const replacedMentions: string[] = []
+
+    this.setStatus(page.id, ITEM_STATUS_REPLACING_MENTIONS)
+    mentions.forEach((mention, idx) => {
+      const name = mention.match(/\[(.*?)\]/)?.[1]
+      const email = mention.match(/mailto:([^)]+)/)?.[1]
+
+      const user = users.find((user) => user.email ? user.email === email : user.name === name)
+
+      if (!user) {
+        replacedMentions.push(mention) // keep original mention if user not found
+
+        return
+      }
+
+      // this should be randomized instead but it just works for now
+      const idxStr = idx.toString()
+      const mentionUniqueId = user.id.slice(0, user.id.length - idxStr.length) + idx
+
+      replacedMentions.push(`@[${name}](mention://${mentionUniqueId}/user/${user?.id})`)
+    })
+
+    let replacementCount = 0
+    const markdownContentWithMentions = markdownContent.replace(CODA_MENTION_REPLACEMENT_REGEX, mention => {
+      return replacedMentions[replacementCount]
+        ? `${replacedMentions[replacementCount++]}`
+        : mention
+    })
+
+    if (replacementCount > 0) await writeFile(pageFilePath, markdownContentWithMentions, 'utf8')
+
+    return true
   }
 
   private async exportPageAsMarkdown (docId: string, page: ICodaPage) {
